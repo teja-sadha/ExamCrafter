@@ -503,13 +503,9 @@ function StudentExam() {
             setSubmitting(true);
             setError("");
 
-            /*
-             * Combine normal MCQ answers
-             * with coding answers.
-             *
-             * The coding execution/evaluation
-             * service will be connected later.
-             */
+            // =========================
+            // Combine Answers
+            // =========================
 
             const finalAnswers = {
                 ...answers,
@@ -783,6 +779,21 @@ function StudentExam() {
             return;
         }
 
+        const currentCodingQuestion =
+            questions.find(
+                (item) =>
+                    item._id ===
+                    questionId
+            );
+
+        const language =
+            codingLanguage[
+                questionId
+            ] ||
+            getDefaultLanguage(
+                currentCodingQuestion
+            );
+
         try {
             setCodingRunning(
                 true
@@ -792,52 +803,137 @@ function StudentExam() {
                 (previous) => ({
                     ...previous,
                     [questionId]:
-                        "Running code..."
+                        "Running your code..."
                 })
             );
 
-            /*
-             * IMPORTANT:
-             *
-             * We intentionally DO NOT execute
-             * arbitrary student code directly
-             * on the Node.js server.
-             *
-             * A secure sandbox/compiler service
-             * will be connected in the next step.
-             */
+            // =========================
+            // Send Code To Backend
+            // =========================
 
-            setTimeout(() => {
+            const response =
+                await api.post(
+                    "/code/run",
+                    {
+                        sourceCode:
+                            code,
 
-                setCodingOutput(
-                    (previous) => ({
-                        ...previous,
-                        [questionId]:
-                            "Code execution service will be connected here."
-                    })
+                        language:
+                            language,
+
+                        stdin:
+                            currentCodingQuestion
+                                ?.sampleInput ||
+                            ""
+                    }
                 );
 
-                setCodingRunning(
-                    false
-                );
-
-            }, 700);
-
-        } catch (error) {
-
-            console.error(
-                "Run code error:",
-                error
+            console.log(
+                "Code execution result:",
+                response.data
             );
+
+            const {
+                output,
+                error,
+                status,
+                time,
+                memory
+            } = response.data;
+
+            let result = "";
+
+            // =========================
+            // Program Output
+            // =========================
+
+            if (output) {
+                result += output;
+            }
+
+            // =========================
+            // Error
+            // =========================
+
+            if (error) {
+                if (result) {
+                    result += "\n\n";
+                }
+
+                result += error;
+            }
+
+            // =========================
+            // Status
+            // =========================
+
+            if (status) {
+                if (result) {
+                    result += "\n\n";
+                }
+
+                result +=
+                    `Status: ${status}`;
+            }
+
+            // =========================
+            // Time
+            // =========================
+
+            if (time) {
+                result +=
+                    `\nTime: ${time}s`;
+            }
+
+            // =========================
+            // Memory
+            // =========================
+
+            if (memory) {
+                result +=
+                    `\nMemory: ${memory} KB`;
+            }
+
+            if (!result.trim()) {
+                result =
+                    "Code executed successfully, but produced no output.";
+            }
 
             setCodingOutput(
                 (previous) => ({
                     ...previous,
                     [questionId]:
-                        "Unable to run code."
+                        result.trim()
                 })
             );
 
+        } catch (error) {
+            console.error(
+                "Run code error:",
+                error
+            );
+
+            let message =
+                "Unable to execute code.";
+
+            if (error.response) {
+                message =
+                    error.response.data.message ||
+                    "Code execution failed";
+            } else if (error.message) {
+                message =
+                    error.message;
+            }
+
+            setCodingOutput(
+                (previous) => ({
+                    ...previous,
+                    [questionId]:
+                        message
+                })
+            );
+
+        } finally {
             setCodingRunning(
                 false
             );
