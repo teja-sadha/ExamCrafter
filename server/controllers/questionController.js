@@ -35,38 +35,85 @@ const createQuestion = async (req, res) => {
     try {
         const {
             examId,
+            type,
+            section,
             question,
             options,
             correctAnswer,
-            marks
+            inputDescription,
+            outputDescription,
+            constraints,
+            sampleInput,
+            sampleOutput,
+            marks,
+            timeLimit,
+            memoryLimit,
+            allowedLanguages
         } = req.body;
 
-        // Check required fields
+        // =========================
+        // Basic Validation
+        // =========================
+
         if (
             !examId ||
+            !section ||
             !question ||
-            !options ||
-            !correctAnswer ||
             !marks
         ) {
             return res.status(400).json({
                 message:
-                    "All fields are required"
+                    "Exam, section, question and marks are required"
             });
         }
 
-        // Check options
+        const questionType =
+            type || "mcq";
+
+        // =========================
+        // Validate Type
+        // =========================
+
         if (
-            !Array.isArray(options) ||
-            options.length !== 4
+            !["mcq", "coding"].includes(
+                questionType
+            )
         ) {
             return res.status(400).json({
                 message:
-                    "Exactly 4 options are required"
+                    "Invalid question type"
             });
         }
 
-        // Find exam
+        // =========================
+        // Section
+        // =========================
+
+        if (
+            typeof section !== "string" ||
+            section.trim().length === 0
+        ) {
+            return res.status(400).json({
+                message:
+                    "Section name is required"
+            });
+        }
+
+        // =========================
+        // Marks
+        // =========================
+
+        if (Number(marks) <= 0) {
+            return res.status(400).json({
+                message:
+                    "Marks must be greater than 0"
+            });
+        }
+
+        // =========================
+        // Find Exam
+        // =========================
+
         const exam =
             await Exam.findById(examId);
 
@@ -77,7 +124,10 @@ const createQuestion = async (req, res) => {
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -88,35 +138,177 @@ const createQuestion = async (req, res) => {
             });
         }
 
-        // Check correct answer
+        // ==========================================
+        // MCQ VALIDATION
+        // ==========================================
+
         if (
-            !options.includes(correctAnswer)
+            questionType === "mcq"
         ) {
-            return res.status(400).json({
-                message:
-                    "Correct answer must match one of the options"
-            });
+            if (
+                !Array.isArray(options) ||
+                options.length !== 4
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Exactly 4 options are required for MCQ"
+                });
+            }
+
+            if (
+                options.some(
+                    (option) =>
+                        !String(option).trim()
+                )
+            ) {
+                return res.status(400).json({
+                    message:
+                        "All options are required"
+                });
+            }
+
+            if (!correctAnswer) {
+                return res.status(400).json({
+                    message:
+                        "Correct answer is required for MCQ"
+                });
+            }
+
+            if (
+                !options.includes(
+                    correctAnswer
+                )
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Correct answer must match one of the options"
+                });
+            }
         }
 
-        // Create question
+        // ==========================================
+        // CODING VALIDATION
+        // ==========================================
+
+        if (
+            questionType === "coding"
+        ) {
+            if (
+                !inputDescription ||
+                !outputDescription ||
+                !sampleInput ||
+                !sampleOutput
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Input, output, sample input and sample output are required for coding questions"
+                });
+            }
+        }
+
+        // =========================
+        // Create Question
+        // =========================
+
         const newQuestion =
             await Question.create({
                 exam: examId,
-                question,
-                options,
-                correctAnswer,
-                marks
+
+                type: questionType,
+
+                section:
+                    section.trim(),
+
+                question:
+                    question.trim(),
+
+                options:
+                    questionType === "mcq"
+                        ? options
+                        : [],
+
+                correctAnswer:
+                    questionType === "mcq"
+                        ? correctAnswer
+                        : null,
+
+                inputDescription:
+                    questionType === "coding"
+                        ? inputDescription
+                        : "",
+
+                outputDescription:
+                    questionType === "coding"
+                        ? outputDescription
+                        : "",
+
+                constraints:
+                    questionType === "coding"
+                        ? constraints || ""
+                        : "",
+
+                sampleInput:
+                    questionType === "coding"
+                        ? sampleInput
+                        : "",
+
+                sampleOutput:
+                    questionType === "coding"
+                        ? sampleOutput
+                        : "",
+
+                marks:
+                    Number(marks),
+
+                timeLimit:
+                    questionType === "coding"
+                        ? Number(
+                              timeLimit || 2
+                          )
+                        : 2,
+
+                memoryLimit:
+                    questionType === "coding"
+                        ? Number(
+                              memoryLimit || 128
+                          )
+                        : 128,
+
+                allowedLanguages:
+                    questionType === "coding"
+                        ? (
+                              Array.isArray(
+                                  allowedLanguages
+                              ) &&
+                              allowedLanguages.length >
+                                  0
+                                  ? allowedLanguages
+                                  : [
+                                        "python",
+                                        "java",
+                                        "cpp"
+                                    ]
+                          )
+                        : []
             });
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            examId
-        );
+        // =========================
+        // Update Total Marks
+        // =========================
+
+        const totalMarks =
+            await updateExamTotalMarks(
+                examId
+            );
 
         res.status(201).json({
             message:
                 "Question created successfully",
-            question: newQuestion
+
+            question:
+                newQuestion,
+
+            totalMarks
         });
 
     } catch (error) {
@@ -133,7 +325,7 @@ const createQuestion = async (req, res) => {
 
 
 // ==========================================
-// ADMIN - GET QUESTIONS FOR EXAM
+// ADMIN - GET QUESTIONS BY EXAM
 // ==========================================
 
 const getQuestionsByExam = async (
@@ -141,9 +333,9 @@ const getQuestionsByExam = async (
     res
 ) => {
     try {
-        const { examId } = req.params;
+        const { examId } =
+            req.params;
 
-        // Find exam
         const exam =
             await Exam.findById(examId);
 
@@ -154,7 +346,6 @@ const getQuestionsByExam = async (
             });
         }
 
-        // Check ownership
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -165,7 +356,6 @@ const getQuestionsByExam = async (
             });
         }
 
-        // Get questions
         const questions =
             await Question.find({
                 exam: examId
@@ -203,13 +393,26 @@ const updateQuestion = async (
             req.params;
 
         const {
+            type,
+            section,
             question,
             options,
             correctAnswer,
-            marks
+            inputDescription,
+            outputDescription,
+            constraints,
+            sampleInput,
+            sampleOutput,
+            marks,
+            timeLimit,
+            memoryLimit,
+            allowedLanguages
         } = req.body;
 
-        // Find question
+        // =========================
+        // Find Question
+        // =========================
+
         const existingQuestion =
             await Question.findById(
                 questionId
@@ -222,7 +425,10 @@ const updateQuestion = async (
             });
         }
 
-        // Find exam
+        // =========================
+        // Find Exam
+        // =========================
+
         const exam =
             await Exam.findById(
                 existingQuestion.exam
@@ -235,7 +441,10 @@ const updateQuestion = async (
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -246,43 +455,41 @@ const updateQuestion = async (
             });
         }
 
-        // Check required fields
-        if (
-            !question ||
-            !options ||
-            !correctAnswer ||
-            !marks
-        ) {
-            return res.status(400).json({
-                message:
-                    "All fields are required"
-            });
-        }
+        // =========================
+        // Type
+        // =========================
 
-        // Check options
-        if (
-            !Array.isArray(options) ||
-            options.length !== 4
-        ) {
-            return res.status(400).json({
-                message:
-                    "Exactly 4 options are required"
-            });
-        }
+        const questionType =
+            type ||
+            existingQuestion.type ||
+            "mcq";
 
-        // Check correct answer
         if (
-            !options.includes(
-                correctAnswer
+            !["mcq", "coding"].includes(
+                questionType
             )
         ) {
             return res.status(400).json({
                 message:
-                    "Correct answer must match one of the options"
+                    "Invalid question type"
             });
         }
 
-        // Check marks
+        // =========================
+        // Basic Validation
+        // =========================
+
+        if (
+            !section ||
+            !question ||
+            !marks
+        ) {
+            return res.status(400).json({
+                message:
+                    "Section, question and marks are required"
+            });
+        }
+
         if (Number(marks) <= 0) {
             return res.status(400).json({
                 message:
@@ -290,31 +497,181 @@ const updateQuestion = async (
             });
         }
 
-        // Update question
+        // ==========================================
+        // MCQ VALIDATION
+        // ==========================================
+
+        if (
+            questionType === "mcq"
+        ) {
+            if (
+                !Array.isArray(options) ||
+                options.length !== 4
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Exactly 4 options are required for MCQ"
+                });
+            }
+
+            if (
+                options.some(
+                    (option) =>
+                        !String(option).trim()
+                )
+            ) {
+                return res.status(400).json({
+                    message:
+                        "All options are required"
+                });
+            }
+
+            if (!correctAnswer) {
+                return res.status(400).json({
+                    message:
+                        "Correct answer is required for MCQ"
+                });
+            }
+
+            if (
+                !options.includes(
+                    correctAnswer
+                )
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Correct answer must match one of the options"
+                });
+            }
+        }
+
+        // ==========================================
+        // CODING VALIDATION
+        // ==========================================
+
+        if (
+            questionType === "coding"
+        ) {
+            if (
+                !inputDescription ||
+                !outputDescription ||
+                !sampleInput ||
+                !sampleOutput
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Input, output, sample input and sample output are required for coding questions"
+                });
+            }
+        }
+
+        // =========================
+        // Update
+        // =========================
+
+        existingQuestion.type =
+            questionType;
+
+        existingQuestion.section =
+            section.trim();
+
         existingQuestion.question =
-            question;
-
-        existingQuestion.options =
-            options;
-
-        existingQuestion.correctAnswer =
-            correctAnswer;
+            question.trim();
 
         existingQuestion.marks =
             Number(marks);
 
+        if (
+            questionType === "mcq"
+        ) {
+            existingQuestion.options =
+                options;
+
+            existingQuestion.correctAnswer =
+                correctAnswer;
+
+            existingQuestion.inputDescription =
+                "";
+
+            existingQuestion.outputDescription =
+                "";
+
+            existingQuestion.constraints =
+                "";
+
+            existingQuestion.sampleInput =
+                "";
+
+            existingQuestion.sampleOutput =
+                "";
+
+        } else {
+            existingQuestion.options =
+                [];
+
+            existingQuestion.correctAnswer =
+                null;
+
+            existingQuestion.inputDescription =
+                inputDescription;
+
+            existingQuestion.outputDescription =
+                outputDescription;
+
+            existingQuestion.constraints =
+                constraints || "";
+
+            existingQuestion.sampleInput =
+                sampleInput;
+
+            existingQuestion.sampleOutput =
+                sampleOutput;
+
+            existingQuestion.timeLimit =
+                Number(
+                    timeLimit || 2
+                );
+
+            existingQuestion.memoryLimit =
+                Number(
+                    memoryLimit || 128
+                );
+
+            existingQuestion.allowedLanguages =
+                (
+                    Array.isArray(
+                        allowedLanguages
+                    ) &&
+                    allowedLanguages.length >
+                        0
+                )
+                    ? allowedLanguages
+                    : [
+                          "python",
+                          "java",
+                          "cpp"
+                      ];
+        }
+
         await existingQuestion.save();
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            existingQuestion.exam
-        );
+        // =========================
+        // Update Total Marks
+        // =========================
+
+        const totalMarks =
+            await updateExamTotalMarks(
+                existingQuestion.exam
+            );
 
         res.status(200).json({
             message:
                 "Question updated successfully",
+
             question:
-                existingQuestion
+                existingQuestion,
+
+            totalMarks
         });
 
     } catch (error) {
@@ -342,7 +699,6 @@ const deleteQuestion = async (
         const { questionId } =
             req.params;
 
-        // Find question
         const question =
             await Question.findById(
                 questionId
@@ -355,7 +711,6 @@ const deleteQuestion = async (
             });
         }
 
-        // Find exam
         const exam =
             await Exam.findById(
                 question.exam
@@ -368,7 +723,6 @@ const deleteQuestion = async (
             });
         }
 
-        // Check ownership
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -379,19 +733,20 @@ const deleteQuestion = async (
             });
         }
 
-        // Delete question
         await Question.findByIdAndDelete(
             questionId
         );
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            question.exam
-        );
+        const totalMarks =
+            await updateExamTotalMarks(
+                question.exam
+            );
 
         res.status(200).json({
             message:
-                "Question deleted successfully"
+                "Question deleted successfully",
+
+            totalMarks
         });
 
     } catch (error) {
@@ -416,9 +771,9 @@ const getStudentQuestions = async (
     res
 ) => {
     try {
-        const { examId } = req.params;
+        const { examId } =
+            req.params;
 
-        // Find exam
         const exam =
             await Exam.findById(examId);
 
@@ -429,7 +784,6 @@ const getStudentQuestions = async (
             });
         }
 
-        // Only published exams
         if (
             exam.status !== "published"
         ) {
@@ -439,45 +793,39 @@ const getStudentQuestions = async (
             });
         }
 
-        // =========================
-        // Check exam time
-        // =========================
-
         const now = new Date();
 
         if (
-            now < new Date(
-                exam.startDate
-            )
+            now <
+            new Date(exam.startDate)
         ) {
             return res.status(403).json({
                 message:
                     "This exam has not started yet",
+
                 startDate:
                     exam.startDate
             });
         }
 
         if (
-            now > new Date(
-                exam.endDate
-            )
+            now >
+            new Date(exam.endDate)
         ) {
             return res.status(403).json({
                 message:
                     "This exam has ended",
+
                 endDate:
                     exam.endDate
             });
         }
 
         // =========================
-        // Get questions
+        // IMPORTANT
         // =========================
-
-        // IMPORTANT:
-        // correctAnswer is NOT
-        // sent to student
+        // Don't send correctAnswer
+        // to students.
 
         const questions =
             await Question.find({
@@ -493,15 +841,22 @@ const getStudentQuestions = async (
         res.status(200).json({
             exam: {
                 id: exam._id,
-                title: exam.title,
+
+                title:
+                    exam.title,
+
                 description:
                     exam.description,
+
                 duration:
                     exam.duration,
+
                 totalMarks:
                     exam.totalMarks,
+
                 startDate:
                     exam.startDate,
+
                 endDate:
                     exam.endDate
             },
