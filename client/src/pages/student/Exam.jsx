@@ -13,8 +13,7 @@ function StudentExam() {
 
     const [exam, setExam] = useState(null);
     const [questions, setQuestions] = useState([]);
-    const [currentQuestion, setCurrentQuestion] =
-        useState(0);
+    const [currentQuestion, setCurrentQuestion] = useState(0);
 
     const [answers, setAnswers] = useState({});
 
@@ -22,68 +21,79 @@ function StudentExam() {
     // Coding State
     // =========================
 
-    const [codingCode, setCodingCode] =
-        useState({});
-
-    const [codingLanguage, setCodingLanguage] =
-        useState({});
-
-    const [codingOutput, setCodingOutput] =
-        useState({});
-
-    const [codingRunning, setCodingRunning] =
-        useState(false);
+    const [codingCode, setCodingCode] = useState({});
+    const [codingLanguage, setCodingLanguage] = useState({});
+    const [codingOutput, setCodingOutput] = useState({});
+    const [codingRunning, setCodingRunning] = useState(false);
 
     // =========================
     // Page State
     // =========================
 
-    const [loading, setLoading] =
-        useState(true);
-
-    const [error, setError] =
-        useState("");
-
-    const [timeLeft, setTimeLeft] =
-        useState(null);
-
-    const [submitting, setSubmitting] =
-        useState(false);
-
-    const [timeUp, setTimeUp] =
-        useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [timeLeft, setTimeLeft] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [timeUp, setTimeUp] = useState(false);
 
     // =========================
     // Coding Resize State
     // =========================
 
-    const [problemWidth, setProblemWidth] =
-        useState(45);
+    const [problemWidth, setProblemWidth] = useState(45);
+    const [editorHeight, setEditorHeight] = useState(65);
 
-    const [editorHeight, setEditorHeight] =
-        useState(65);
+    const isDraggingVertical = useRef(false);
+    const isDraggingHorizontal = useRef(false);
 
-    const isDraggingVertical =
-        useRef(false);
+    // =========================
+    // Prevent Duplicate Submit
+    // =========================
 
-    const isDraggingHorizontal =
-        useRef(false);
+    const submitStartedRef = useRef(false);
 
     // =========================
     // Local Storage Keys
     // =========================
 
-    const timerKey =
-        `exam_${id}_endTime`;
+    const timerKey = `exam_${id}_endTime`;
+    const answersKey = `exam_${id}_answers`;
+    const codingCodeKey = `exam_${id}_codingCode`;
+    const codingLanguageKey = `exam_${id}_codingLanguage`;
 
-    const answersKey =
-        `exam_${id}_answers`;
+    // =========================
+    // Enter Fullscreen
+    // =========================
 
-    const codingCodeKey =
-        `exam_${id}_codingCode`;
+    const enterFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (error) {
+            console.warn(
+                "Enter fullscreen failed:",
+                error
+            );
+        }
+    };
 
-    const codingLanguageKey =
-        `exam_${id}_codingLanguage`;
+    // =========================
+    // Exit Fullscreen
+    // =========================
+
+    const exitFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            }
+        } catch (error) {
+            console.warn(
+                "Exit fullscreen failed:",
+                error
+            );
+        }
+    };
 
     // =========================
     // Fetch Exam
@@ -92,13 +102,11 @@ function StudentExam() {
     useEffect(() => {
         const fetchExam = async () => {
             try {
-                const response =
-                    await api.get(
-                        `/questions/student/${id}`
-                    );
+                const response = await api.get(
+                    `/questions/student/${id}`
+                );
 
-                const examData =
-                    response.data.exam;
+                const examData = response.data.exam;
 
                 setExam(examData);
 
@@ -118,9 +126,7 @@ function StudentExam() {
                 if (savedAnswers) {
                     try {
                         setAnswers(
-                            JSON.parse(
-                                savedAnswers
-                            )
+                            JSON.parse(savedAnswers)
                         );
                     } catch (error) {
                         console.error(
@@ -202,16 +208,13 @@ function StudentExam() {
                 let endTime;
 
                 if (savedEndTime) {
-                    endTime =
-                        Number(
-                            savedEndTime
-                        );
+                    endTime = Number(
+                        savedEndTime
+                    );
                 } else {
                     endTime =
                         Date.now() +
-                        Number(
-                            examData.duration
-                        ) *
+                        Number(examData.duration) *
                             60 *
                             1000;
 
@@ -259,7 +262,6 @@ function StudentExam() {
         };
 
         fetchExam();
-
     }, [
         id,
         answersKey,
@@ -289,9 +291,7 @@ function StudentExam() {
     useEffect(() => {
         localStorage.setItem(
             codingCodeKey,
-            JSON.stringify(
-                codingCode
-            )
+            JSON.stringify(codingCode)
         );
     }, [
         codingCode,
@@ -305,9 +305,7 @@ function StudentExam() {
     useEffect(() => {
         localStorage.setItem(
             codingLanguageKey,
-            JSON.stringify(
-                codingLanguage
-            )
+            JSON.stringify(codingLanguage)
         );
     }, [
         codingLanguage,
@@ -320,14 +318,11 @@ function StudentExam() {
 
     useEffect(() => {
         const handleMouseMove = (event) => {
-
             // =========================
             // Vertical Resize
             // =========================
 
-            if (
-                isDraggingVertical.current
-            ) {
+            if (isDraggingVertical.current) {
                 const container =
                     document.querySelector(
                         ".coding-workspace"
@@ -365,9 +360,7 @@ function StudentExam() {
             // Horizontal Resize
             // =========================
 
-            if (
-                isDraggingHorizontal.current
-            ) {
+            if (isDraggingHorizontal.current) {
                 const editor =
                     document.querySelector(
                         ".coding-editor-panel"
@@ -403,11 +396,8 @@ function StudentExam() {
         };
 
         const handleMouseUp = () => {
-            isDraggingVertical.current =
-                false;
-
-            isDraggingHorizontal.current =
-                false;
+            isDraggingVertical.current = false;
+            isDraggingHorizontal.current = false;
 
             document.body.style.cursor =
                 "default";
@@ -443,13 +433,10 @@ function StudentExam() {
     // Start Vertical Resize
     // =========================
 
-    const startVerticalResize = (
-        event
-    ) => {
+    const startVerticalResize = (event) => {
         event.preventDefault();
 
-        isDraggingVertical.current =
-            true;
+        isDraggingVertical.current = true;
 
         document.body.style.cursor =
             "col-resize";
@@ -462,13 +449,10 @@ function StudentExam() {
     // Start Horizontal Resize
     // =========================
 
-    const startHorizontalResize = (
-        event
-    ) => {
+    const startHorizontalResize = (event) => {
         event.preventDefault();
 
-        isDraggingHorizontal.current =
-            true;
+        isDraggingHorizontal.current = true;
 
         document.body.style.cursor =
             "row-resize";
@@ -484,7 +468,10 @@ function StudentExam() {
     const handleSubmit = async (
         automatic = false
     ) => {
-        if (submitting) {
+        if (
+            submitting ||
+            submitStartedRef.current
+        ) {
             return;
         }
 
@@ -499,9 +486,17 @@ function StudentExam() {
             }
         }
 
+        submitStartedRef.current = true;
+
         try {
             setSubmitting(true);
             setError("");
+
+            // =========================
+            // Exit Fullscreen
+            // =========================
+
+            await exitFullscreen();
 
             // =========================
             // Combine Answers
@@ -512,14 +507,12 @@ function StudentExam() {
                 ...codingCode
             };
 
-            const response =
-                await api.post(
-                    `/results/exam/${id}`,
-                    {
-                        answers:
-                            finalAnswers
-                    }
-                );
+            const response = await api.post(
+                `/results/exam/${id}`,
+                {
+                    answers: finalAnswers
+                }
+            );
 
             console.log(
                 "Exam submitted:",
@@ -556,6 +549,8 @@ function StudentExam() {
                 error
             );
 
+            submitStartedRef.current = false;
+
             if (error.response) {
                 setError(
                     error.response.data.message ||
@@ -584,29 +579,23 @@ function StudentExam() {
             return;
         }
 
-        const timer =
-            setInterval(() => {
-                setTimeLeft(
-                    (previousTime) => {
+        const timer = setInterval(() => {
+            setTimeLeft(
+                (previousTime) => {
+                    if (
+                        previousTime ===
+                            null ||
+                        previousTime <= 1
+                    ) {
+                        clearInterval(timer);
 
-                        if (
-                            previousTime ===
-                                null ||
-                            previousTime <= 1
-                        ) {
-                            clearInterval(
-                                timer
-                            );
-
-                            return 0;
-                        }
-
-                        return (
-                            previousTime - 1
-                        );
+                        return 0;
                     }
-                );
-            }, 1000);
+
+                    return previousTime - 1;
+                }
+            );
+        }, 1000);
 
         return () =>
             clearInterval(timer);
@@ -624,7 +613,8 @@ function StudentExam() {
         if (
             timeLeft === 0 &&
             exam &&
-            !submitting
+            !submitting &&
+            !submitStartedRef.current
         ) {
             setTimeUp(true);
 
@@ -640,17 +630,13 @@ function StudentExam() {
     // Format Time
     // =========================
 
-    const formatTime = (
-        seconds
-    ) => {
+    const formatTime = (seconds) => {
         if (seconds === null) {
             return "--:--";
         }
 
         const minutes =
-            Math.floor(
-                seconds / 60
-            );
+            Math.floor(seconds / 60);
 
         const remainingSeconds =
             seconds % 60;
@@ -672,9 +658,7 @@ function StudentExam() {
     // MCQ Answer
     // =========================
 
-    const handleAnswer = (
-        answer
-    ) => {
+    const handleAnswer = (answer) => {
         if (submitting) {
             return;
         }
@@ -701,13 +685,12 @@ function StudentExam() {
         question
     ) => {
         if (
-            question.allowedLanguages &&
+            question?.allowedLanguages &&
             question.allowedLanguages.length >
                 0
         ) {
             return (
-                question
-                    .allowedLanguages[0]
+                question.allowedLanguages[0]
             );
         }
 
@@ -795,9 +778,7 @@ function StudentExam() {
             );
 
         try {
-            setCodingRunning(
-                true
-            );
+            setCodingRunning(true);
 
             setCodingOutput(
                 (previous) => ({
@@ -806,10 +787,6 @@ function StudentExam() {
                         "Running your code..."
                 })
             );
-
-            // =========================
-            // Send Code To Backend
-            // =========================
 
             const response =
                 await api.post(
@@ -844,7 +821,7 @@ function StudentExam() {
             let result = "";
 
             // =========================
-            // Program Output
+            // Output
             // =========================
 
             if (output) {
@@ -934,9 +911,7 @@ function StudentExam() {
             );
 
         } finally {
-            setCodingRunning(
-                false
-            );
+            setCodingRunning(false);
         }
     };
 
@@ -1339,10 +1314,6 @@ function StudentExam() {
 
                     <main className="coding-question-card">
 
-                        {/* =========================
-                            Coding Header
-                        ========================= */}
-
                         <div className="coding-question-header">
 
                             <div>
@@ -1377,7 +1348,7 @@ function StudentExam() {
                         >
 
                             {/* =========================
-                                Problem Panel
+                                Problem
                             ========================= */}
 
                             <div
@@ -1512,9 +1483,7 @@ function StudentExam() {
                                 }}
                             >
 
-                                {/* =========================
-                                    Toolbar
-                                ========================= */}
+                                {/* Toolbar */}
 
                                 <div className="coding-editor-toolbar">
 
@@ -1596,9 +1565,7 @@ function StudentExam() {
 
                                 </div>
 
-                                {/* =========================
-                                    Code Editor
-                                ========================= */}
+                                {/* Code Editor */}
 
                                 <div
                                     className="coding-editor-area"
@@ -1636,9 +1603,7 @@ function StudentExam() {
 
                                 </div>
 
-                                {/* =========================
-                                    Horizontal Resizer
-                                ========================= */}
+                                {/* Horizontal Resizer */}
 
                                 <div
                                     className="coding-horizontal-resizer"
@@ -1652,9 +1617,7 @@ function StudentExam() {
                                     </span>
                                 </div>
 
-                                {/* =========================
-                                    Console
-                                ========================= */}
+                                {/* Console */}
 
                                 <div className="coding-console">
 
@@ -1686,17 +1649,13 @@ function StudentExam() {
                                     </div>
 
                                     <pre className="coding-console-output">
-
                                         {currentOutput ||
                                             "Run your code to see the output here."}
-
                                     </pre>
 
                                 </div>
 
-                                {/* =========================
-                                    Coding Actions
-                                ========================= */}
+                                {/* Actions */}
 
                                 <div className="coding-actions">
 

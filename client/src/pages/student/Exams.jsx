@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import "../../styles/exams.css";
 
 function StudentExams() {
+    const navigate = useNavigate();
+
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -51,6 +53,32 @@ function StudentExams() {
 
         fetchExams();
     }, []);
+
+    // =========================
+    // Start Exam + Fullscreen
+    // =========================
+
+    const handleStartExam = async (examId) => {
+        try {
+            // Request fullscreen directly from
+            // the user's button click.
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (error) {
+            console.warn(
+                "Fullscreen request failed:",
+                error
+            );
+
+            // We still allow the student
+            // to enter the exam.
+        }
+
+        navigate(
+            `/student/exam/${examId}`
+        );
+    };
 
     // =========================
     // Get Exam Status
@@ -134,6 +162,7 @@ function StudentExams() {
     if (loading) {
         return (
             <div className="exams-page">
+
                 <div className="exams-container">
 
                     <div className="exams-loading">
@@ -147,6 +176,7 @@ function StudentExams() {
                     </div>
 
                 </div>
+
             </div>
         );
     }
@@ -158,6 +188,7 @@ function StudentExams() {
     if (error) {
         return (
             <div className="exams-page">
+
                 <div className="exams-container">
 
                     <div className="exams-error">
@@ -167,6 +198,7 @@ function StudentExams() {
                         </div>
 
                         <div>
+
                             <h2>
                                 Unable to load exams
                             </h2>
@@ -174,11 +206,13 @@ function StudentExams() {
                             <p>
                                 {error}
                             </p>
+
                         </div>
 
                     </div>
 
                 </div>
+
             </div>
         );
     }
@@ -190,10 +224,13 @@ function StudentExams() {
     if (exams.length === 0) {
         return (
             <div className="exams-page">
+
                 <div className="exams-container">
 
                     <div className="exams-header">
+
                         <div>
+
                             <p className="page-label">
                                 ExamCrafter
                             </p>
@@ -206,7 +243,9 @@ function StudentExams() {
                                 Test your knowledge
                                 and improve your skills.
                             </p>
+
                         </div>
+
                     </div>
 
                     <div className="empty-exams">
@@ -228,6 +267,7 @@ function StudentExams() {
                     </div>
 
                 </div>
+
             </div>
         );
     }
@@ -248,6 +288,7 @@ function StudentExams() {
                 <div className="exams-header">
 
                     <div>
+
                         <p className="page-label">
                             ExamCrafter
                         </p>
@@ -260,9 +301,11 @@ function StudentExams() {
                             Choose an exam and
                             challenge yourself.
                         </p>
+
                     </div>
 
                     <div className="exam-count">
+
                         <strong>
                             {exams.length}
                         </strong>
@@ -272,6 +315,7 @@ function StudentExams() {
                                 ? "Exam"
                                 : "Exams"}
                         </span>
+
                     </div>
 
                 </div>
@@ -296,7 +340,9 @@ function StudentExams() {
                                 className="exam-card"
                             >
 
-                                {/* Top */}
+                                {/* =========================
+                                    Top
+                                ========================= */}
 
                                 <div className="exam-card-top">
 
@@ -307,6 +353,7 @@ function StudentExams() {
                                     <span
                                         className={`exam-status ${statusInfo.className}`}
                                     >
+
                                         <span>
                                             {
                                                 statusInfo.icon
@@ -316,11 +363,14 @@ function StudentExams() {
                                         {
                                             statusInfo.label
                                         }
+
                                     </span>
 
                                 </div>
 
-                                {/* Content */}
+                                {/* =========================
+                                    Content
+                                ========================= */}
 
                                 <div className="exam-card-content">
 
@@ -335,7 +385,9 @@ function StudentExams() {
 
                                 </div>
 
-                                {/* Details */}
+                                {/* =========================
+                                    Details
+                                ========================= */}
 
                                 <div className="exam-details">
 
@@ -346,6 +398,7 @@ function StudentExams() {
                                         </span>
 
                                         <div>
+
                                             <small>
                                                 Duration
                                             </small>
@@ -353,6 +406,7 @@ function StudentExams() {
                                             <strong>
                                                 {exam.duration} min
                                             </strong>
+
                                         </div>
 
                                     </div>
@@ -364,6 +418,7 @@ function StudentExams() {
                                         </span>
 
                                         <div>
+
                                             <small>
                                                 Total Marks
                                             </small>
@@ -371,17 +426,21 @@ function StudentExams() {
                                             <strong>
                                                 {exam.totalMarks}
                                             </strong>
+
                                         </div>
 
                                     </div>
 
                                 </div>
 
-                                {/* Dates */}
+                                {/* =========================
+                                    Dates
+                                ========================= */}
 
                                 <div className="exam-dates">
 
                                     <div>
+
                                         <span>
                                             Starts
                                         </span>
@@ -399,9 +458,11 @@ function StudentExams() {
                                                 }
                                             )}
                                         </strong>
+
                                     </div>
 
                                     <div>
+
                                         <span>
                                             Ends
                                         </span>
@@ -419,43 +480,64 @@ function StudentExams() {
                                                 }
                                             )}
                                         </strong>
+
                                     </div>
 
                                 </div>
 
-                                {/* Action */}
+                                {/* =========================
+                                    Action
+                                ========================= */}
 
                                 <div className="exam-action">
 
                                     {status ===
                                         "completed" && (
-                                        <Link
-                                            to={`/student/results/${exam._id}`}
+
+                                        <button
+                                            type="button"
                                             className="exam-button exam-button-result"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/student/results/${exam._id}`
+                                                )
+                                            }
                                         >
                                             View Result
+
                                             <span>
                                                 →
                                             </span>
-                                        </Link>
+
+                                        </button>
                                     )}
 
                                     {status ===
                                         "available" && (
-                                        <Link
-                                            to={`/student/exam/${exam._id}`}
+
+                                        <button
+                                            type="button"
                                             className="exam-button exam-button-start"
+                                            onClick={() =>
+                                                handleStartExam(
+                                                    exam._id
+                                                )
+                                            }
                                         >
                                             Start Exam
+
                                             <span>
                                                 →
                                             </span>
-                                        </Link>
+
+                                        </button>
                                     )}
 
                                     {status ===
                                         "not-started" && (
+
                                         <button
+                                            type="button"
                                             disabled
                                             className="exam-button exam-button-disabled"
                                         >
@@ -465,7 +547,9 @@ function StudentExams() {
 
                                     {status ===
                                         "ended" && (
+
                                         <button
+                                            type="button"
                                             disabled
                                             className="exam-button exam-button-disabled"
                                         >
