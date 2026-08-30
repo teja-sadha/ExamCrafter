@@ -1,0 +1,49 @@
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const examRoutes = require("./routes/examRoutes");
+const questionRoutes = require("./routes/questionRoutes");
+const resultRoutes = require("./routes/resultRoutes");
+
+dotenv.config();
+
+const app = express();
+
+const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(
+    cors({
+        origin: "http://localhost:5173"
+    })
+);
+
+app.use(express.json());
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/results", resultRoutes);
+app.use("/api/exams", examRoutes);
+app.use("/api/questions", questionRoutes);
+
+// Test routes
+app.get("/", (req, res) => {
+    res.send("CodeArena Backend is Running");
+});
+
+app.get("/api/test", (req, res) => {
+    res.json({
+        message: "Backend connection successful"
+    });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
