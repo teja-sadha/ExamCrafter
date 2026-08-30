@@ -14,36 +14,72 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
+// =========================
 // Connect to MongoDB
+// =========================
+
 connectDB();
 
+// =========================
 // Middleware
+// =========================
+
 app.use(
     cors({
-        origin: "http://localhost:5173"
+        origin: true,
+        credentials: true
     })
 );
 
 app.use(express.json());
 
+// =========================
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/results", resultRoutes);
-app.use("/api/exams", examRoutes);
-app.use("/api/questions", questionRoutes);
+// =========================
 
-// Test routes
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+app.use(
+    "/api/results",
+    resultRoutes
+);
+
+app.use(
+    "/api/exams",
+    examRoutes
+);
+
+app.use(
+    "/api/questions",
+    questionRoutes
+);
+
+// =========================
+// Test Routes
+// =========================
+
 app.get("/", (req, res) => {
-    res.send("CodeArena Backend is Running");
+    res.send(
+        "ExamCrafter Backend is Running"
+    );
 });
 
 app.get("/api/test", (req, res) => {
     res.json({
-        message: "Backend connection successful"
+        message:
+            "Backend connection successful"
     });
 });
 
-// Start server
+// =========================
+// Start Server
+// =========================
+
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(
+        `Server running on port ${PORT}`
+    );
 });
