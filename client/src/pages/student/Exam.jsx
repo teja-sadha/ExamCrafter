@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import "../../styles/studentExam.css";
@@ -7,18 +7,83 @@ function StudentExam() {
     const { id } = useParams();
     const navigate = useNavigate();
 
+    // =========================
+    // Exam State
+    // =========================
+
     const [exam, setExam] = useState(null);
     const [questions, setQuestions] = useState([]);
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [timeLeft, setTimeLeft] = useState(null);
-    const [submitting, setSubmitting] = useState(false);
-    const [timeUp, setTimeUp] = useState(false);
+    const [currentQuestion, setCurrentQuestion] =
+        useState(0);
 
-    const timerKey = `exam_${id}_endTime`;
-    const answersKey = `exam_${id}_answers`;
+    const [answers, setAnswers] = useState({});
+
+    // =========================
+    // Coding State
+    // =========================
+
+    const [codingCode, setCodingCode] =
+        useState({});
+
+    const [codingLanguage, setCodingLanguage] =
+        useState({});
+
+    const [codingOutput, setCodingOutput] =
+        useState({});
+
+    const [codingRunning, setCodingRunning] =
+        useState(false);
+
+    // =========================
+    // Page State
+    // =========================
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
+
+    const [timeLeft, setTimeLeft] =
+        useState(null);
+
+    const [submitting, setSubmitting] =
+        useState(false);
+
+    const [timeUp, setTimeUp] =
+        useState(false);
+
+    // =========================
+    // Coding Resize State
+    // =========================
+
+    const [problemWidth, setProblemWidth] =
+        useState(45);
+
+    const [editorHeight, setEditorHeight] =
+        useState(65);
+
+    const isDraggingVertical =
+        useRef(false);
+
+    const isDraggingHorizontal =
+        useRef(false);
+
+    // =========================
+    // Local Storage Keys
+    // =========================
+
+    const timerKey =
+        `exam_${id}_endTime`;
+
+    const answersKey =
+        `exam_${id}_answers`;
+
+    const codingCodeKey =
+        `exam_${id}_codingCode`;
+
+    const codingLanguageKey =
+        `exam_${id}_codingLanguage`;
 
     // =========================
     // Fetch Exam
@@ -27,25 +92,35 @@ function StudentExam() {
     useEffect(() => {
         const fetchExam = async () => {
             try {
-                const response = await api.get(
-                    `/questions/student/${id}`
-                );
+                const response =
+                    await api.get(
+                        `/questions/student/${id}`
+                    );
 
-                const examData = response.data.exam;
+                const examData =
+                    response.data.exam;
 
                 setExam(examData);
+
                 setQuestions(
                     response.data.questions || []
                 );
 
-                // Restore answers
+                // =========================
+                // Restore Answers
+                // =========================
+
                 const savedAnswers =
-                    localStorage.getItem(answersKey);
+                    localStorage.getItem(
+                        answersKey
+                    );
 
                 if (savedAnswers) {
                     try {
                         setAnswers(
-                            JSON.parse(savedAnswers)
+                            JSON.parse(
+                                savedAnswers
+                            )
                         );
                     } catch (error) {
                         console.error(
@@ -59,18 +134,84 @@ function StudentExam() {
                     }
                 }
 
-                // Restore timer
+                // =========================
+                // Restore Coding Code
+                // =========================
+
+                const savedCodingCode =
+                    localStorage.getItem(
+                        codingCodeKey
+                    );
+
+                if (savedCodingCode) {
+                    try {
+                        setCodingCode(
+                            JSON.parse(
+                                savedCodingCode
+                            )
+                        );
+                    } catch (error) {
+                        console.error(
+                            "Invalid saved coding code:",
+                            error
+                        );
+
+                        localStorage.removeItem(
+                            codingCodeKey
+                        );
+                    }
+                }
+
+                // =========================
+                // Restore Languages
+                // =========================
+
+                const savedLanguages =
+                    localStorage.getItem(
+                        codingLanguageKey
+                    );
+
+                if (savedLanguages) {
+                    try {
+                        setCodingLanguage(
+                            JSON.parse(
+                                savedLanguages
+                            )
+                        );
+                    } catch (error) {
+                        console.error(
+                            "Invalid saved coding languages:",
+                            error
+                        );
+
+                        localStorage.removeItem(
+                            codingLanguageKey
+                        );
+                    }
+                }
+
+                // =========================
+                // Restore Timer
+                // =========================
+
                 const savedEndTime =
-                    localStorage.getItem(timerKey);
+                    localStorage.getItem(
+                        timerKey
+                    );
 
                 let endTime;
 
                 if (savedEndTime) {
-                    endTime = Number(savedEndTime);
+                    endTime =
+                        Number(
+                            savedEndTime
+                        );
                 } else {
                     endTime =
                         Date.now() +
-                        Number(examData.duration) *
+                        Number(
+                            examData.duration
+                        ) *
                             60 *
                             1000;
 
@@ -80,14 +221,20 @@ function StudentExam() {
                     );
                 }
 
-                const remainingSeconds = Math.max(
-                    0,
-                    Math.ceil(
-                        (endTime - Date.now()) / 1000
-                    )
-                );
+                const remainingSeconds =
+                    Math.max(
+                        0,
+                        Math.ceil(
+                            (
+                                endTime -
+                                Date.now()
+                            ) / 1000
+                        )
+                    );
 
-                setTimeLeft(remainingSeconds);
+                setTimeLeft(
+                    remainingSeconds
+                );
 
             } catch (error) {
                 console.error(
@@ -105,13 +252,21 @@ function StudentExam() {
                         "Unable to connect to server"
                     );
                 }
+
             } finally {
                 setLoading(false);
             }
         };
 
         fetchExam();
-    }, [id, answersKey, timerKey]);
+
+    }, [
+        id,
+        answersKey,
+        timerKey,
+        codingCodeKey,
+        codingLanguageKey
+    ]);
 
     // =========================
     // Save Answers
@@ -122,21 +277,222 @@ function StudentExam() {
             answersKey,
             JSON.stringify(answers)
         );
-    }, [answers, answersKey]);
+    }, [
+        answers,
+        answersKey
+    ]);
+
+    // =========================
+    // Save Coding Code
+    // =========================
+
+    useEffect(() => {
+        localStorage.setItem(
+            codingCodeKey,
+            JSON.stringify(
+                codingCode
+            )
+        );
+    }, [
+        codingCode,
+        codingCodeKey
+    ]);
+
+    // =========================
+    // Save Coding Language
+    // =========================
+
+    useEffect(() => {
+        localStorage.setItem(
+            codingLanguageKey,
+            JSON.stringify(
+                codingLanguage
+            )
+        );
+    }, [
+        codingLanguage,
+        codingLanguageKey
+    ]);
+
+    // =========================
+    // Mouse Resize
+    // =========================
+
+    useEffect(() => {
+        const handleMouseMove = (event) => {
+
+            // =========================
+            // Vertical Resize
+            // =========================
+
+            if (
+                isDraggingVertical.current
+            ) {
+                const container =
+                    document.querySelector(
+                        ".coding-workspace"
+                    );
+
+                if (!container) {
+                    return;
+                }
+
+                const rect =
+                    container.getBoundingClientRect();
+
+                const percentage =
+                    (
+                        (
+                            event.clientX -
+                            rect.left
+                        ) /
+                        rect.width
+                    ) *
+                    100;
+
+                setProblemWidth(
+                    Math.min(
+                        70,
+                        Math.max(
+                            25,
+                            percentage
+                        )
+                    )
+                );
+            }
+
+            // =========================
+            // Horizontal Resize
+            // =========================
+
+            if (
+                isDraggingHorizontal.current
+            ) {
+                const editor =
+                    document.querySelector(
+                        ".coding-editor-panel"
+                    );
+
+                if (!editor) {
+                    return;
+                }
+
+                const rect =
+                    editor.getBoundingClientRect();
+
+                const percentage =
+                    (
+                        (
+                            event.clientY -
+                            rect.top
+                        ) /
+                        rect.height
+                    ) *
+                    100;
+
+                setEditorHeight(
+                    Math.min(
+                        85,
+                        Math.max(
+                            30,
+                            percentage
+                        )
+                    )
+                );
+            }
+        };
+
+        const handleMouseUp = () => {
+            isDraggingVertical.current =
+                false;
+
+            isDraggingHorizontal.current =
+                false;
+
+            document.body.style.cursor =
+                "default";
+
+            document.body.style.userSelect =
+                "auto";
+        };
+
+        window.addEventListener(
+            "mousemove",
+            handleMouseMove
+        );
+
+        window.addEventListener(
+            "mouseup",
+            handleMouseUp
+        );
+
+        return () => {
+            window.removeEventListener(
+                "mousemove",
+                handleMouseMove
+            );
+
+            window.removeEventListener(
+                "mouseup",
+                handleMouseUp
+            );
+        };
+    }, []);
+
+    // =========================
+    // Start Vertical Resize
+    // =========================
+
+    const startVerticalResize = (
+        event
+    ) => {
+        event.preventDefault();
+
+        isDraggingVertical.current =
+            true;
+
+        document.body.style.cursor =
+            "col-resize";
+
+        document.body.style.userSelect =
+            "none";
+    };
+
+    // =========================
+    // Start Horizontal Resize
+    // =========================
+
+    const startHorizontalResize = (
+        event
+    ) => {
+        event.preventDefault();
+
+        isDraggingHorizontal.current =
+            true;
+
+        document.body.style.cursor =
+            "row-resize";
+
+        document.body.style.userSelect =
+            "none";
+    };
 
     // =========================
     // Submit Exam
     // =========================
 
-    const handleSubmit = async (automatic = false) => {
+    const handleSubmit = async (
+        automatic = false
+    ) => {
         if (submitting) {
             return;
         }
 
         if (!automatic) {
-            const confirmed = window.confirm(
-                "Are you sure you want to submit the exam?"
-            );
+            const confirmed =
+                window.confirm(
+                    "Are you sure you want to submit the exam?"
+                );
 
             if (!confirmed) {
                 return;
@@ -147,20 +503,52 @@ function StudentExam() {
             setSubmitting(true);
             setError("");
 
-            const response = await api.post(
-                `/results/exam/${id}`,
-                {
-                    answers
-                }
-            );
+            /*
+             * Combine normal MCQ answers
+             * with coding answers.
+             *
+             * The coding execution/evaluation
+             * service will be connected later.
+             */
+
+            const finalAnswers = {
+                ...answers,
+                ...codingCode
+            };
+
+            const response =
+                await api.post(
+                    `/results/exam/${id}`,
+                    {
+                        answers:
+                            finalAnswers
+                    }
+                );
 
             console.log(
                 "Exam submitted:",
                 response.data
             );
 
-            localStorage.removeItem(timerKey);
-            localStorage.removeItem(answersKey);
+            // =========================
+            // Clear Saved Exam Data
+            // =========================
+
+            localStorage.removeItem(
+                timerKey
+            );
+
+            localStorage.removeItem(
+                answersKey
+            );
+
+            localStorage.removeItem(
+                codingCodeKey
+            );
+
+            localStorage.removeItem(
+                codingLanguageKey
+            );
 
             navigate(
                 `/student/results/${id}`
@@ -200,25 +588,40 @@ function StudentExam() {
             return;
         }
 
-        const timer = setInterval(() => {
-            setTimeLeft((previousTime) => {
-                if (
-                    previousTime === null ||
-                    previousTime <= 1
-                ) {
-                    clearInterval(timer);
-                    return 0;
-                }
+        const timer =
+            setInterval(() => {
+                setTimeLeft(
+                    (previousTime) => {
 
-                return previousTime - 1;
-            });
-        }, 1000);
+                        if (
+                            previousTime ===
+                                null ||
+                            previousTime <= 1
+                        ) {
+                            clearInterval(
+                                timer
+                            );
 
-        return () => clearInterval(timer);
-    }, [timeLeft, submitting]);
+                            return 0;
+                        }
+
+                        return (
+                            previousTime - 1
+                        );
+                    }
+                );
+            }, 1000);
+
+        return () =>
+            clearInterval(timer);
+
+    }, [
+        timeLeft,
+        submitting
+    ]);
 
     // =========================
-    // Automatic Submission
+    // Automatic Submit
     // =========================
 
     useEffect(() => {
@@ -228,50 +631,262 @@ function StudentExam() {
             !submitting
         ) {
             setTimeUp(true);
+
             handleSubmit(true);
         }
-    }, [timeLeft, exam, submitting]);
+    }, [
+        timeLeft,
+        exam,
+        submitting
+    ]);
 
     // =========================
     // Format Time
     // =========================
 
-    const formatTime = (seconds) => {
+    const formatTime = (
+        seconds
+    ) => {
         if (seconds === null) {
             return "--:--";
         }
 
-        const minutes = Math.floor(
-            seconds / 60
-        );
+        const minutes =
+            Math.floor(
+                seconds / 60
+            );
 
         const remainingSeconds =
             seconds % 60;
 
-        return `${String(minutes).padStart(
+        return `${String(
+            minutes
+        ).padStart(
             2,
             "0"
         )}:${String(
             remainingSeconds
-        ).padStart(2, "0")}`;
+        ).padStart(
+            2,
+            "0"
+        )}`;
     };
 
     // =========================
-    // Select Answer
+    // MCQ Answer
     // =========================
 
-    const handleAnswer = (answer) => {
+    const handleAnswer = (
+        answer
+    ) => {
         if (submitting) {
             return;
         }
 
         const questionId =
-            questions[currentQuestion]._id;
+            questions[
+                currentQuestion
+            ]._id;
 
-        setAnswers((previousAnswers) => ({
-            ...previousAnswers,
-            [questionId]: answer
-        }));
+        setAnswers(
+            (previousAnswers) => ({
+                ...previousAnswers,
+                [questionId]:
+                    answer
+            })
+        );
+    };
+
+    // =========================
+    // Default Coding Language
+    // =========================
+
+    const getDefaultLanguage = (
+        question
+    ) => {
+        if (
+            question.allowedLanguages &&
+            question.allowedLanguages.length >
+                0
+        ) {
+            return (
+                question
+                    .allowedLanguages[0]
+            );
+        }
+
+        return "python";
+    };
+
+    // =========================
+    // Change Coding Language
+    // =========================
+
+    const handleLanguageChange = (
+        questionId,
+        language
+    ) => {
+        setCodingLanguage(
+            (previousLanguages) => ({
+                ...previousLanguages,
+                [questionId]:
+                    language
+            })
+        );
+    };
+
+    // =========================
+    // Change Code
+    // =========================
+
+    const handleCodeChange = (
+        questionId,
+        code
+    ) => {
+        setCodingCode(
+            (previousCode) => ({
+                ...previousCode,
+                [questionId]:
+                    code
+            })
+        );
+    };
+
+    // =========================
+    // Run Code
+    // =========================
+
+    const handleRunCode = async (
+        questionId
+    ) => {
+        if (
+            submitting ||
+            codingRunning
+        ) {
+            return;
+        }
+
+        const code =
+            codingCode[
+                questionId
+            ] || "";
+
+        if (!code.trim()) {
+            setCodingOutput(
+                (previous) => ({
+                    ...previous,
+                    [questionId]:
+                        "Please write some code before running."
+                })
+            );
+
+            return;
+        }
+
+        try {
+            setCodingRunning(
+                true
+            );
+
+            setCodingOutput(
+                (previous) => ({
+                    ...previous,
+                    [questionId]:
+                        "Running code..."
+                })
+            );
+
+            /*
+             * IMPORTANT:
+             *
+             * We intentionally DO NOT execute
+             * arbitrary student code directly
+             * on the Node.js server.
+             *
+             * A secure sandbox/compiler service
+             * will be connected in the next step.
+             */
+
+            setTimeout(() => {
+
+                setCodingOutput(
+                    (previous) => ({
+                        ...previous,
+                        [questionId]:
+                            "Code execution service will be connected here."
+                    })
+                );
+
+                setCodingRunning(
+                    false
+                );
+
+            }, 700);
+
+        } catch (error) {
+
+            console.error(
+                "Run code error:",
+                error
+            );
+
+            setCodingOutput(
+                (previous) => ({
+                    ...previous,
+                    [questionId]:
+                        "Unable to run code."
+                })
+            );
+
+            setCodingRunning(
+                false
+            );
+        }
+    };
+
+    // =========================
+    // Submit Coding Code
+    // =========================
+
+    const handleSubmitCode = (
+        questionId
+    ) => {
+        if (submitting) {
+            return;
+        }
+
+        const code =
+            codingCode[
+                questionId
+            ] || "";
+
+        if (!code.trim()) {
+            setCodingOutput(
+                (previous) => ({
+                    ...previous,
+                    [questionId]:
+                        "Please write your code before submitting."
+                })
+            );
+
+            return;
+        }
+
+        setAnswers(
+            (previousAnswers) => ({
+                ...previousAnswers,
+                [questionId]:
+                    code
+            })
+        );
+
+        setCodingOutput(
+            (previous) => ({
+                ...previous,
+                [questionId]:
+                    "Code saved. You can continue to the next question."
+            })
+        );
     };
 
     // =========================
@@ -285,7 +900,8 @@ function StudentExam() {
             !submitting
         ) {
             setCurrentQuestion(
-                (previous) => previous + 1
+                (previous) =>
+                    previous + 1
             );
         }
     };
@@ -296,7 +912,8 @@ function StudentExam() {
             !submitting
         ) {
             setCurrentQuestion(
-                (previous) => previous - 1
+                (previous) =>
+                    previous - 1
             );
         }
     };
@@ -308,12 +925,17 @@ function StudentExam() {
     if (loading) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-loading">
+
                     <div className="exam-spinner"></div>
+
                     <p>
                         Preparing your exam...
                     </p>
+
                 </div>
+
             </div>
         );
     }
@@ -325,7 +947,9 @@ function StudentExam() {
     if (error && !exam) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-message-card">
+
                     <div className="message-icon">
                         !
                     </div>
@@ -334,7 +958,9 @@ function StudentExam() {
                         Unable to load exam
                     </h2>
 
-                    <p>{error}</p>
+                    <p>
+                        {error}
+                    </p>
 
                     <button
                         onClick={() =>
@@ -345,7 +971,9 @@ function StudentExam() {
                     >
                         Back to Exams
                     </button>
+
                 </div>
+
             </div>
         );
     }
@@ -360,6 +988,7 @@ function StudentExam() {
     ) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-message-card">
 
                     <div className="message-icon">
@@ -386,23 +1015,56 @@ function StudentExam() {
                     </button>
 
                 </div>
+
             </div>
         );
     }
 
+    // =========================
+    // Current Question
+    // =========================
+
     const question =
         questions[currentQuestion];
 
+    const questionType =
+        question.type || "mcq";
+
     const selectedAnswer =
-        answers[question._id];
+        answers[
+            question._id
+        ];
+
+    const currentCode =
+        codingCode[
+            question._id
+        ] || "";
+
+    const currentLanguage =
+        codingLanguage[
+            question._id
+        ] ||
+        getDefaultLanguage(
+            question
+        );
+
+    const currentOutput =
+        codingOutput[
+            question._id
+        ] || "";
 
     const answeredCount =
-        Object.keys(answers).length;
+        Object.keys(
+            answers
+        ).length;
 
     const progress =
-        ((currentQuestion + 1) /
-            questions.length) *
-        100;
+        (
+            (
+                currentQuestion + 1
+            ) /
+            questions.length
+        ) * 100;
 
     const isLastQuestion =
         currentQuestion ===
@@ -442,11 +1104,13 @@ function StudentExam() {
                                 : ""
                         }`}
                     >
+
                         <span className="timer-icon">
                             ⏱
                         </span>
 
                         <div>
+
                             <small>
                                 Time Remaining
                             </small>
@@ -456,7 +1120,9 @@ function StudentExam() {
                                     timeLeft
                                 )}
                             </strong>
+
                         </div>
+
                     </div>
 
                 </header>
@@ -505,12 +1171,15 @@ function StudentExam() {
                     </div>
 
                     <div className="progress-track">
+
                         <div
                             className="progress-fill"
                             style={{
-                                width: `${progress}%`
+                                width:
+                                    `${progress}%`
                             }}
                         ></div>
+
                     </div>
 
                 </div>
@@ -522,14 +1191,21 @@ function StudentExam() {
                 <div className="question-numbers">
 
                     {questions.map(
-                        (item, index) => {
+                        (
+                            item,
+                            index
+                        ) => {
 
                             const answered =
-                                answers[item._id];
+                                answers[
+                                    item._id
+                                ];
 
                             return (
                                 <button
-                                    key={item._id}
+                                    key={
+                                        item._id
+                                    }
                                     className={`question-number ${
                                         currentQuestion ===
                                         index
@@ -558,96 +1234,524 @@ function StudentExam() {
 
                 </div>
 
-                {/* =========================
-                    Question Card
-                ========================= */}
+                {/* =================================================
+                    CODING QUESTION
+                ================================================= */}
 
-                <main className="question-card">
+                {questionType ===
+                    "coding" ? (
 
-                    <div className="question-card-header">
+                    <main className="coding-question-card">
 
-                        <span className="question-label">
-                            Question{" "}
-                            {currentQuestion + 1}
-                        </span>
+                        {/* =========================
+                            Coding Header
+                        ========================= */}
 
-                        <span className="marks-badge">
-                            {question.marks}{" "}
-                            {question.marks === 1
-                                ? "Mark"
-                                : "Marks"}
-                        </span>
+                        <div className="coding-question-header">
 
-                    </div>
+                            <div>
 
-                    <h2 className="question-text">
-                        {question.question}
-                    </h2>
+                                <span className="question-label">
+                                    Coding Question{" "}
+                                    {currentQuestion + 1}
+                                </span>
 
-                    <p className="question-hint">
-                        Select the best answer
-                    </p>
+                                <h2>
+                                    {question.question}
+                                </h2>
 
-                    <div className="options-list">
+                            </div>
 
-                        {question.options.map(
-                            (option, index) => {
+                            <span className="marks-badge">
+                                {question.marks}{" "}
+                                {question.marks ===
+                                1
+                                    ? "Mark"
+                                    : "Marks"}
+                            </span>
 
-                                const isSelected =
-                                    selectedAnswer ===
-                                    option;
+                        </div>
 
-                                return (
-                                    <label
-                                        key={index}
-                                        className={`option-card ${
-                                            isSelected
-                                                ? "selected"
-                                                : ""
-                                        }`}
-                                    >
+                        {/* =========================
+                            Coding Workspace
+                        ========================= */}
 
-                                        <input
-                                            type="radio"
-                                            name={
-                                                question._id
+                        <div
+                            className="coding-workspace"
+                        >
+
+                            {/* =========================
+                                Problem Panel
+                            ========================= */}
+
+                            <div
+                                className="coding-problem-panel"
+                                style={{
+                                    width:
+                                        `${problemWidth}%`
+                                }}
+                            >
+
+                                <div className="coding-problem-scroll">
+
+                                    <div className="coding-section-block">
+
+                                        <h3>
+                                            Problem
+                                        </h3>
+
+                                        <p>
+                                            {
+                                                question.question
                                             }
-                                            value={option}
-                                            checked={
-                                                isSelected
+                                        </p>
+
+                                    </div>
+
+                                    <div className="coding-section-block">
+
+                                        <h3>
+                                            Input
+                                        </h3>
+
+                                        <p>
+                                            {
+                                                question.inputDescription ||
+                                                "Input description not provided."
                                             }
-                                            onChange={() =>
-                                                handleAnswer(
-                                                    option
+                                        </p>
+
+                                    </div>
+
+                                    <div className="coding-section-block">
+
+                                        <h3>
+                                            Output
+                                        </h3>
+
+                                        <p>
+                                            {
+                                                question.outputDescription ||
+                                                "Output description not provided."
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                    {question.constraints && (
+                                        <div className="coding-section-block">
+
+                                            <h3>
+                                                Constraints
+                                            </h3>
+
+                                            <pre>
+                                                {
+                                                    question.constraints
+                                                }
+                                            </pre>
+
+                                        </div>
+                                    )}
+
+                                    <div className="coding-section-block">
+
+                                        <h3>
+                                            Sample Input
+                                        </h3>
+
+                                        <pre>
+                                            {
+                                                question.sampleInput ||
+                                                "-"
+                                            }
+                                        </pre>
+
+                                    </div>
+
+                                    <div className="coding-section-block">
+
+                                        <h3>
+                                            Sample Output
+                                        </h3>
+
+                                        <pre>
+                                            {
+                                                question.sampleOutput ||
+                                                "-"
+                                            }
+                                        </pre>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            {/* =========================
+                                Vertical Resizer
+                            ========================= */}
+
+                            <div
+                                className="coding-vertical-resizer"
+                                onMouseDown={
+                                    startVerticalResize
+                                }
+                                title="Drag to resize"
+                            >
+                                <span>
+                                    ⋮
+                                </span>
+                            </div>
+
+                            {/* =========================
+                                Editor Panel
+                            ========================= */}
+
+                            <div
+                                className="coding-editor-panel"
+                                style={{
+                                    width:
+                                        `${100 - problemWidth}%`
+                                }}
+                            >
+
+                                {/* =========================
+                                    Toolbar
+                                ========================= */}
+
+                                <div className="coding-editor-toolbar">
+
+                                    <div className="language-area">
+
+                                        <label>
+                                            Language
+                                        </label>
+
+                                        <select
+                                            value={
+                                                currentLanguage
+                                            }
+                                            onChange={(e) =>
+                                                handleLanguageChange(
+                                                    question._id,
+                                                    e.target.value
                                                 )
                                             }
                                             disabled={
                                                 submitting
                                             }
-                                        />
+                                        >
 
-                                        <span className="option-letter">
-                                            {String.fromCharCode(
-                                                65 + index
+                                            {(
+                                                question.allowedLanguages ||
+                                                [
+                                                    "python",
+                                                    "java",
+                                                    "cpp"
+                                                ]
+                                            ).map(
+                                                (
+                                                    language
+                                                ) => (
+                                                    <option
+                                                        key={
+                                                            language
+                                                        }
+                                                        value={
+                                                            language
+                                                        }
+                                                    >
+                                                        {language ===
+                                                        "python"
+                                                            ? "Python"
+                                                            : language ===
+                                                              "java"
+                                                            ? "Java"
+                                                            : language ===
+                                                              "cpp"
+                                                            ? "C++"
+                                                            : language}
+                                                    </option>
+                                                )
                                             )}
+
+                                        </select>
+
+                                    </div>
+
+                                    <div className="coding-limits">
+
+                                        <span>
+                                            ⏱{" "}
+                                            {question.timeLimit ||
+                                                2}
+                                            s
                                         </span>
 
-                                        <span className="option-text">
-                                            {option}
+                                        <span>
+                                            💾{" "}
+                                            {question.memoryLimit ||
+                                                128}
+                                            MB
                                         </span>
 
-                                        <span className="option-check">
-                                            ✓
+                                    </div>
+
+                                </div>
+
+                                {/* =========================
+                                    Code Editor
+                                ========================= */}
+
+                                <div
+                                    className="coding-editor-area"
+                                    style={{
+                                        height:
+                                            `${editorHeight}%`
+                                    }}
+                                >
+
+                                    <textarea
+                                        className="coding-code-editor"
+                                        value={
+                                            currentCode
+                                        }
+                                        onChange={(e) =>
+                                            handleCodeChange(
+                                                question._id,
+                                                e.target.value
+                                            )
+                                        }
+                                        disabled={
+                                            submitting
+                                        }
+                                        spellCheck="false"
+                                        placeholder={
+                                            currentLanguage ===
+                                            "python"
+                                                ? "Write your Python code here..."
+                                                : currentLanguage ===
+                                                  "java"
+                                                ? "Write your Java code here..."
+                                                : "Write your C++ code here..."
+                                        }
+                                    />
+
+                                </div>
+
+                                {/* =========================
+                                    Horizontal Resizer
+                                ========================= */}
+
+                                <div
+                                    className="coding-horizontal-resizer"
+                                    onMouseDown={
+                                        startHorizontalResize
+                                    }
+                                    title="Drag to resize"
+                                >
+                                    <span>
+                                        ⋯
+                                    </span>
+                                </div>
+
+                                {/* =========================
+                                    Console
+                                ========================= */}
+
+                                <div className="coding-console">
+
+                                    <div className="coding-console-header">
+
+                                        <span>
+                                            Output
                                         </span>
 
-                                    </label>
-                                );
-                            }
-                        )}
+                                        {currentOutput && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setCodingOutput(
+                                                        (
+                                                            previous
+                                                        ) => ({
+                                                            ...previous,
+                                                            [question._id]:
+                                                                ""
+                                                        })
+                                                    )
+                                                }
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
 
-                    </div>
+                                    </div>
 
-                </main>
+                                    <pre className="coding-console-output">
+
+                                        {currentOutput ||
+                                            "Run your code to see the output here."}
+
+                                    </pre>
+
+                                </div>
+
+                                {/* =========================
+                                    Coding Actions
+                                ========================= */}
+
+                                <div className="coding-actions">
+
+                                    <button
+                                        type="button"
+                                        className="coding-run-button"
+                                        onClick={() =>
+                                            handleRunCode(
+                                                question._id
+                                            )
+                                        }
+                                        disabled={
+                                            submitting ||
+                                            codingRunning
+                                        }
+                                    >
+                                        {codingRunning
+                                            ? "Running..."
+                                            : "▶ Run Code"}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="coding-submit-button"
+                                        onClick={() =>
+                                            handleSubmitCode(
+                                                question._id
+                                            )
+                                        }
+                                        disabled={
+                                            submitting
+                                        }
+                                    >
+                                        Submit Code
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </main>
+
+                ) : (
+
+                    /* =================================================
+                        MCQ QUESTION
+                    ================================================= */
+
+                    <main className="question-card">
+
+                        <div className="question-card-header">
+
+                            <span className="question-label">
+                                Question{" "}
+                                {currentQuestion + 1}
+                            </span>
+
+                            <span className="marks-badge">
+                                {question.marks}{" "}
+                                {question.marks ===
+                                1
+                                    ? "Mark"
+                                    : "Marks"}
+                            </span>
+
+                        </div>
+
+                        <h2 className="question-text">
+                            {question.question}
+                        </h2>
+
+                        <p className="question-hint">
+                            Select the best answer
+                        </p>
+
+                        <div className="options-list">
+
+                            {(
+                                question.options ||
+                                []
+                            ).map(
+                                (
+                                    option,
+                                    index
+                                ) => {
+
+                                    const isSelected =
+                                        selectedAnswer ===
+                                        option;
+
+                                    return (
+                                        <label
+                                            key={
+                                                index
+                                            }
+                                            className={`option-card ${
+                                                isSelected
+                                                    ? "selected"
+                                                    : ""
+                                            }`}
+                                        >
+
+                                            <input
+                                                type="radio"
+                                                name={
+                                                    question._id
+                                                }
+                                                value={
+                                                    option
+                                                }
+                                                checked={
+                                                    isSelected
+                                                }
+                                                onChange={() =>
+                                                    handleAnswer(
+                                                        option
+                                                    )
+                                                }
+                                                disabled={
+                                                    submitting
+                                                }
+                                            />
+
+                                            <span className="option-letter">
+                                                {String.fromCharCode(
+                                                    65 +
+                                                        index
+                                                )}
+                                            </span>
+
+                                            <span className="option-text">
+                                                {
+                                                    option
+                                                }
+                                            </span>
+
+                                            <span className="option-check">
+                                                ✓
+                                            </span>
+
+                                        </label>
+                                    );
+                                }
+                            )}
+
+                        </div>
+
+                    </main>
+                )}
 
                 {/* =========================
                     Bottom Navigation
@@ -670,17 +1774,22 @@ function StudentExam() {
                     </button>
 
                     <div className="answer-count">
+
                         <strong>
                             {answeredCount}
                         </strong>
+
                         /
                         {questions.length}
+
                         <span>
                             Answered
                         </span>
+
                     </div>
 
                     {!isLastQuestion ? (
+
                         <button
                             className="exam-nav-button next"
                             onClick={
@@ -692,7 +1801,9 @@ function StudentExam() {
                         >
                             Next →
                         </button>
+
                     ) : (
+
                         <button
                             className="exam-submit-button"
                             onClick={() =>
@@ -708,6 +1819,7 @@ function StudentExam() {
                                 ? "Submitting..."
                                 : "Submit Exam ✓"}
                         </button>
+
                     )}
 
                 </div>
