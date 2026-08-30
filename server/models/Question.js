@@ -8,11 +8,29 @@ const questionSchema = new mongoose.Schema(
             required: true
         },
 
+        // =========================
+        // Section
+        // =========================
+
+        section: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        // =========================
+        // Question
+        // =========================
+
         question: {
             type: String,
             required: true,
             trim: true
         },
+
+        // =========================
+        // MCQ Options
+        // =========================
 
         options: {
             type: [String],
@@ -21,14 +39,23 @@ const questionSchema = new mongoose.Schema(
                 validator: function (value) {
                     return value.length === 4;
                 },
-                message: "A question must have exactly 4 options"
+                message:
+                    "A question must have exactly 4 options"
             }
         },
+
+        // =========================
+        // Correct Answer
+        // =========================
 
         correctAnswer: {
             type: String,
             required: true
         },
+
+        // =========================
+        // Marks
+        // =========================
 
         marks: {
             type: Number,
@@ -41,4 +68,8 @@ const questionSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("Question", questionSchema);
+module.exports =
+    mongoose.model(
+        "Question",
+        questionSchema
+    );
