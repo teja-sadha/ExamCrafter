@@ -16,6 +16,42 @@ function Navbar() {
         return location.pathname === path;
     };
 
+    // Student is currently writing an exam
+    const isStudentExamPage =
+        user?.role === "student" &&
+        location.pathname.startsWith("/student/exam/");
+
+    // =========================
+    // Exam Mode Navbar
+    // =========================
+
+    if (isStudentExamPage) {
+        return (
+            <nav className="navbar exam-mode-navbar">
+
+                <div className="navbar-container">
+
+                    <Link
+                        to="/student/exams"
+                        className="navbar-logo"
+                    >
+                        <img
+                            src="/images/examcrafter-logo.png.jpeg"
+                            alt="ExamCrafter"
+                            className="navbar-logo-image"
+                        />
+                    </Link>
+
+                    <div className="exam-mode-title">
+                        <span>Exam in Progress</span>
+                    </div>
+
+                </div>
+
+            </nav>
+        );
+    }
+
     return (
         <nav className="navbar">
 
@@ -30,10 +66,10 @@ function Navbar() {
                     className="navbar-logo"
                 >
                     <img
-    src="/images/examcrafter-logo.png.jpeg"
-    alt="ExamCrafter"
-    className="navbar-logo-image"
-/>
+                        src="/images/examcrafter-logo.png.jpeg"
+                        alt="ExamCrafter"
+                        className="navbar-logo-image"
+                    />
                 </Link>
 
                 {/* =========================
@@ -70,15 +106,11 @@ function Navbar() {
 
                             <Link
                                 to="/register"
-                                className={
-                                    `navbar-register ${
-                                        isActive(
-                                            "/register"
-                                        )
-                                            ? "active"
-                                            : ""
-                                    }`
-                                }
+                                className={`navbar-register ${
+                                    isActive("/register")
+                                        ? "active"
+                                        : ""
+                                }`}
                             >
                                 Register
                             </Link>
@@ -129,6 +161,7 @@ function Navbar() {
                             </Link>
 
                             <div className="navbar-user">
+
                                 <span className="user-avatar">
                                     {user?.name
                                         ?.charAt(0)
@@ -138,13 +171,12 @@ function Navbar() {
                                 <span className="user-name">
                                     {user?.name}
                                 </span>
+
                             </div>
 
                             <button
                                 className="navbar-logout"
-                                onClick={
-                                    handleLogout
-                                }
+                                onClick={handleLogout}
                             >
                                 Logout
                             </button>
@@ -195,6 +227,7 @@ function Navbar() {
                             </Link>
 
                             <div className="navbar-user">
+
                                 <span className="user-avatar">
                                     {user?.name
                                         ?.charAt(0)
@@ -204,13 +237,12 @@ function Navbar() {
                                 <span className="user-name">
                                     {user?.name}
                                 </span>
+
                             </div>
 
                             <button
                                 className="navbar-logout"
-                                onClick={
-                                    handleLogout
-                                }
+                                onClick={handleLogout}
                             >
                                 Logout
                             </button>

@@ -341,3 +341,19 @@
         width: 125px;
     }
 }
+
+.exam-mode-navbar .navbar-container {
+    justify-content: space-between;
+}
+
+.exam-mode-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.exam-mode-title span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}

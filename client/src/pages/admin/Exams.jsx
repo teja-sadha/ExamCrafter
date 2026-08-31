@@ -2,47 +2,100 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
 
-function AdminExams() {
-    const [exams, setExams] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+// ==========================================
+// Convert database date to datetime-local
+// ==========================================
 
-    // =========================
+const formatDateForInput = (date) => {
+    if (!date) {
+        return "";
+    }
+
+    const parsedDate = new Date(date);
+
+    const year =
+        parsedDate.getFullYear();
+
+    const month = String(
+        parsedDate.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+        parsedDate.getDate()
+    ).padStart(2, "0");
+
+    const hours = String(
+        parsedDate.getHours()
+    ).padStart(2, "0");
+
+    const minutes = String(
+        parsedDate.getMinutes()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+// ==========================================
+// Convert datetime-local to ISO
+// ==========================================
+
+const toISOString = (value) => {
+    if (!value) {
+        return "";
+    }
+
+    return new Date(value).toISOString();
+};
+
+function AdminExams() {
+
+    const [exams, setExams] = useState([]);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
+
+    // ==========================================
     // Edit State
-    // =========================
+    // ==========================================
 
     const [editingExamId, setEditingExamId] =
         useState(null);
 
-    const [editForm, setEditForm] = useState({
-        title: "",
-        description: "",
-        duration: "",
-        startDate: "",
-        endDate: "",
-        status: "draft"
-    });
+    const [editForm, setEditForm] =
+        useState({
+            title: "",
+            description: "",
+            duration: "",
+            startDate: "",
+            endDate: "",
+            status: "draft"
+        });
 
     const [editLoading, setEditLoading] =
         useState(false);
 
-    // =========================
+    // ==========================================
     // Delete State
-    // =========================
+    // ==========================================
 
     const [deleteLoading, setDeleteLoading] =
         useState(false);
 
-    // =========================
+    // ==========================================
     // Fetch Exams
-    // =========================
+    // ==========================================
 
     useEffect(() => {
+
         const fetchExams = async () => {
+
             try {
-                const response = await api.get(
-                    "/exams"
-                );
+
+                const response =
+                    await api.get("/exams");
 
                 const examList =
                     response.data.exams;
@@ -51,7 +104,9 @@ function AdminExams() {
                     await Promise.all(
                         examList.map(
                             async (exam) => {
+
                                 try {
+
                                     const questionResponse =
                                         await api.get(
                                             `/questions/exam/${exam._id}`
@@ -72,21 +127,24 @@ function AdminExams() {
                                                 total +
                                                 Number(
                                                     question.marks ||
-                                                        0
+                                                    0
                                                 ),
                                             0
                                         );
 
                                     return {
                                         ...exam,
+
                                         questionCount:
                                             questions.length,
+
                                         calculatedMarks
                                     };
 
                                 } catch (
                                     questionError
                                 ) {
+
                                     console.error(
                                         `Failed to load questions for exam ${exam._id}:`,
                                         questionError
@@ -94,8 +152,10 @@ function AdminExams() {
 
                                     return {
                                         ...exam,
-                                        questionCount: 0,
-                                        calculatedMarks: 0
+                                        questionCount:
+                                            0,
+                                        calculatedMarks:
+                                            0
                                     };
                                 }
                             }
@@ -107,66 +167,90 @@ function AdminExams() {
                 );
 
             } catch (error) {
+
                 console.error(
                     "Fetch exams error:",
                     error
                 );
 
                 if (error.response) {
+
                     setError(
                         error.response.data.message ||
                         "Failed to load exams"
                     );
+
                 } else {
+
                     setError(
                         "Unable to connect to server"
                     );
                 }
 
             } finally {
+
                 setLoading(false);
             }
         };
 
         fetchExams();
+
     }, []);
 
-    // =========================
+    // ==========================================
     // Handle Edit Input
-    // =========================
+    // ==========================================
 
     const handleEditChange = (e) => {
-        const { name, value } = e.target;
 
-        setEditForm((previousForm) => ({
-            ...previousForm,
-            [name]: value
-        }));
+        const {
+            name,
+            value
+        } = e.target;
+
+        setEditForm(
+            (previousForm) => ({
+                ...previousForm,
+                [name]: value
+            })
+        );
     };
 
-    // =========================
+    // ==========================================
     // Start Editing
-    // =========================
+    // ==========================================
 
     const handleEdit = (exam) => {
+
         setError("");
 
-        setEditingExamId(exam._id);
+        setEditingExamId(
+            exam._id
+        );
 
         setEditForm({
-            title: exam.title || "",
+
+            title:
+                exam.title || "",
+
             description:
                 exam.description || "",
+
             duration:
                 exam.duration || "",
+
+            // Convert database date
+            // into browser local time
             startDate:
                 formatDateForInput(
                     exam.startDate
                 ),
+
             endDate:
                 formatDateForInput(
                     exam.endDate
                 ),
+
             status:
                 exam.status || "draft"
         });
@@ -177,50 +261,16 @@ function AdminExams() {
         });
     };
 
-    // =========================
-    // Format Date
-    // =========================
-
-    const formatDateForInput = (
-        date
-    ) => {
-        if (!date) {
-            return "";
-        }
-
-        const parsedDate =
-            new Date(date);
-
-        const year =
-            parsedDate.getFullYear();
-
-        const month = String(
-            parsedDate.getMonth() + 1
-        ).padStart(2, "0");
-
-        const day = String(
-            parsedDate.getDate()
-        ).padStart(2, "0");
-
-        const hours = String(
-            parsedDate.getHours()
-        ).padStart(2, "0");
-
-        const minutes = String(
-            parsedDate.getMinutes()
-        ).padStart(2, "0");
-
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    // =========================
+    // ==========================================
     // Cancel Edit
-    // =========================
+    // ==========================================
 
     const handleCancelEdit = () => {
+
         setEditingExamId(null);
 
         setEditForm({
+
             title: "",
             description: "",
             duration: "",
@@ -230,24 +280,61 @@ function AdminExams() {
         });
     };
 
-    // =========================
+    // ==========================================
     // Update Exam
-    // =========================
+    // ==========================================
 
     const handleUpdateExam = async (
         e
     ) => {
+
         e.preventDefault();
 
         setError("");
 
+        // Validate dates on frontend
+
+        if (
+            !editForm.startDate ||
+            !editForm.endDate
+        ) {
+
+            setError(
+                "Please select start and end date/time"
+            );
+
+            return;
+        }
+
+        if (
+            new Date(
+                editForm.endDate
+            ) <=
+            new Date(
+                editForm.startDate
+            )
+        ) {
+
+            setError(
+                "End date must be after start date"
+            );
+
+            return;
+        }
+
         try {
+
             setEditLoading(true);
+
+            // ==========================================
+            // Convert local datetime to UTC ISO
+            // ==========================================
 
             const response =
                 await api.put(
                     `/exams/${editingExamId}`,
                     {
+
                         title:
                             editForm.title,
 
@@ -260,10 +347,14 @@ function AdminExams() {
                             ),
 
                         startDate:
-                            editForm.startDate,
+                            toISOString(
+                                editForm.startDate
+                            ),
 
                         endDate:
-                            editForm.endDate,
+                            toISOString(
+                                editForm.endDate
+                            ),
 
                         status:
                             editForm.status
@@ -277,6 +368,10 @@ function AdminExams() {
 
             const updatedExam =
                 response.data.exam;
+
+            // ==========================================
+            // Update exam in UI
+            // ==========================================
 
             setExams(
                 (previousExams) =>
@@ -295,34 +390,40 @@ function AdminExams() {
             handleCancelEdit();
 
         } catch (error) {
+
             console.error(
                 "Update exam error:",
                 error
             );
 
             if (error.response) {
+
                 setError(
                     error.response.data.message ||
                     "Failed to update exam"
                 );
+
             } else {
+
                 setError(
                     "Unable to connect to server"
                 );
             }
 
         } finally {
+
             setEditLoading(false);
         }
     };
 
-    // =========================
+    // ==========================================
     // Delete Exam
-    // =========================
+    // ==========================================
 
     const handleDeleteExam = async (
         exam
     ) => {
+
         const confirmed =
             window.confirm(
                 `Are you sure you want to delete "${exam.title}"?\n\nThis will also delete all questions belonging to this exam.`
@@ -333,7 +434,9 @@ function AdminExams() {
         }
 
         try {
+
             setError("");
+
             setDeleteLoading(true);
 
             await api.delete(
@@ -341,6 +444,7 @@ function AdminExams() {
             );
 
             // Remove exam from UI
+
             setExams(
                 (previousExams) =>
                     previousExams.filter(
@@ -351,42 +455,51 @@ function AdminExams() {
             );
 
             // If deleted exam was being edited
+
             if (
                 editingExamId ===
                 exam._id
             ) {
+
                 handleCancelEdit();
             }
 
         } catch (error) {
+
             console.error(
                 "Delete exam error:",
                 error
             );
 
             if (error.response) {
+
                 setError(
                     error.response.data.message ||
                     "Failed to delete exam"
                 );
+
             } else {
+
                 setError(
                     "Unable to connect to server"
                 );
             }
 
         } finally {
+
             setDeleteLoading(false);
         }
     };
 
-    // =========================
+    // ==========================================
     // Loading
-    // =========================
+    // ==========================================
 
     if (loading) {
+
         return (
             <div>
+
                 <h1>
                     Manage Exams
                 </h1>
@@ -394,17 +507,23 @@ function AdminExams() {
                 <p>
                     Loading exams...
                 </p>
+
             </div>
         );
     }
 
-    // =========================
+    // ==========================================
     // Error
-    // =========================
+    // ==========================================
 
-    if (error && !editingExamId) {
+    if (
+        error &&
+        !editingExamId
+    ) {
+
         return (
             <div>
+
                 <h1>
                     Manage Exams
                 </h1>
@@ -416,13 +535,14 @@ function AdminExams() {
                 >
                     {error}
                 </p>
+
             </div>
         );
     }
 
-    // =========================
+    // ==========================================
     // UI
-    // =========================
+    // ==========================================
 
     return (
         <div>
@@ -441,18 +561,21 @@ function AdminExams() {
                 </p>
             )}
 
-            <Link to="/admin/exams/create">
+            <Link
+                to="/admin/exams/create"
+            >
                 Create New Exam
             </Link>
 
             <br />
             <br />
 
-            {/* =========================
+            {/* ==========================================
                 Edit Exam Form
-            ========================= */}
+            ========================================== */}
 
             {editingExamId && (
+
                 <div
                     style={{
                         border:
@@ -475,7 +598,10 @@ function AdminExams() {
                         }
                     >
 
+                        {/* Title */}
+
                         <div>
+
                             <label>
                                 Exam Title
                             </label>
@@ -493,11 +619,15 @@ function AdminExams() {
                                 }
                                 required
                             />
+
                         </div>
 
                         <br />
 
+                        {/* Description */}
+
                         <div>
+
                             <label>
                                 Description
                             </label>
@@ -515,11 +645,15 @@ function AdminExams() {
                                 rows="4"
                                 required
                             />
+
                         </div>
 
                         <br />
 
+                        {/* Duration */}
+
                         <div>
+
                             <label>
                                 Duration
                                 (minutes)
@@ -539,11 +673,15 @@ function AdminExams() {
                                 min="1"
                                 required
                             />
+
                         </div>
 
                         <br />
 
+                        {/* Start Date */}
+
                         <div>
+
                             <label>
                                 Start Date
                             </label>
@@ -561,11 +699,15 @@ function AdminExams() {
                                 }
                                 required
                             />
+
                         </div>
 
                         <br />
 
+                        {/* End Date */}
+
                         <div>
+
                             <label>
                                 End Date
                             </label>
@@ -583,11 +725,15 @@ function AdminExams() {
                                 }
                                 required
                             />
+
                         </div>
 
                         <br />
 
+                        {/* Status */}
+
                         <div>
+
                             <label>
                                 Status
                             </label>
@@ -603,6 +749,7 @@ function AdminExams() {
                                     handleEditChange
                                 }
                             >
+
                                 <option value="draft">
                                     Draft
                                 </option>
@@ -610,7 +757,9 @@ function AdminExams() {
                                 <option value="published">
                                     Published
                                 </option>
+
                             </select>
+
                         </div>
 
                         <br />
@@ -638,12 +787,13 @@ function AdminExams() {
                         </button>
 
                     </form>
+
                 </div>
             )}
 
-            {/* =========================
+            {/* ==========================================
                 Exam List
-            ========================= */}
+            ========================================== */}
 
             {exams.length === 0 ? (
 
@@ -653,142 +803,162 @@ function AdminExams() {
 
             ) : (
 
-                exams.map((exam) => (
+                exams.map(
+                    (exam) => (
 
-                    <div
-                        key={exam._id}
-                        style={{
-                            border:
-                                "1px solid #ccc",
-                            padding: "20px",
-                            marginBottom:
-                                "20px",
-                            borderRadius:
-                                "8px"
-                        }}
-                    >
-
-                        <h2>
-                            {exam.title}
-                        </h2>
-
-                        <p>
-                            {exam.description}
-                        </p>
-
-                        <hr />
-
-                        <p>
-                            <strong>
-                                Questions:
-                            </strong>{" "}
-                            {exam.questionCount}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Calculated Total Marks:
-                            </strong>{" "}
-                            {exam.calculatedMarks}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Exam Total Marks:
-                            </strong>{" "}
-                            {exam.totalMarks}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Duration:
-                            </strong>{" "}
-                            {exam.duration} minutes
-                        </p>
-
-                        <p>
-                            <strong>
-                                Status:
-                            </strong>{" "}
-                            {exam.status}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Start:
-                            </strong>{" "}
-                            {new Date(
-                                exam.startDate
-                            ).toLocaleString()}
-                        </p>
-
-                        <p>
-                            <strong>
-                                End:
-                            </strong>{" "}
-                            {new Date(
-                                exam.endDate
-                            ).toLocaleString()}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Exam ID:
-                            </strong>{" "}
-                            {exam._id}
-                        </p>
-
-                        <br />
-
-                        {/* Edit Exam */}
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleEdit(
-                                    exam
-                                )
-                            }
-                        >
-                            Edit Exam
-                        </button>
-
-                        {" "}
-
-                        {/* Manage Questions */}
-
-                        <Link
-                            to={`/admin/exams/${exam._id}/questions`}
-                        >
-                            Add / Manage Questions
-                        </Link>
-
-                        {" "}
-
-                        {/* Delete Exam */}
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleDeleteExam(
-                                    exam
-                                )
-                            }
-                            disabled={
-                                deleteLoading
+                        <div
+                            key={
+                                exam._id
                             }
                             style={{
-                                marginLeft:
-                                    "10px"
+                                border:
+                                    "1px solid #ccc",
+                                padding:
+                                    "20px",
+                                marginBottom:
+                                    "20px",
+                                borderRadius:
+                                    "8px"
                             }}
                         >
-                            {deleteLoading
-                                ? "Deleting..."
-                                : "Delete Exam"}
-                        </button>
 
-                    </div>
-                ))
+                            <h2>
+                                {exam.title}
+                            </h2>
+
+                            <p>
+                                {
+                                    exam.description
+                                }
+                            </p>
+
+                            <hr />
+
+                            <p>
+                                <strong>
+                                    Questions:
+                                </strong>{" "}
+                                {
+                                    exam.questionCount
+                                }
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Calculated Total Marks:
+                                </strong>{" "}
+                                {
+                                    exam.calculatedMarks
+                                }
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Exam Total Marks:
+                                </strong>{" "}
+                                {
+                                    exam.totalMarks
+                                }
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Duration:
+                                </strong>{" "}
+                                {
+                                    exam.duration
+                                }{" "}
+                                minutes
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Status:
+                                </strong>{" "}
+                                {
+                                    exam.status
+                                }
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Start:
+                                </strong>{" "}
+                                {new Date(
+                                    exam.startDate
+                                ).toLocaleString()}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    End:
+                                </strong>{" "}
+                                {new Date(
+                                    exam.endDate
+                                ).toLocaleString()}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Exam ID:
+                                </strong>{" "}
+                                {
+                                    exam._id
+                                }
+                            </p>
+
+                            <br />
+
+                            {/* Edit */}
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleEdit(
+                                        exam
+                                    )
+                                }
+                            >
+                                Edit Exam
+                            </button>
+
+                            {" "}
+
+                            {/* Manage Questions */}
+
+                            <Link
+                                to={`/admin/exams/${exam._id}/questions`}
+                            >
+                                Add / Manage Questions
+                            </Link>
+
+                            {" "}
+
+                            {/* Delete */}
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleDeleteExam(
+                                        exam
+                                    )
+                                }
+                                disabled={
+                                    deleteLoading
+                                }
+                                style={{
+                                    marginLeft:
+                                        "10px"
+                                }}
+                            >
+                                {deleteLoading
+                                    ? "Deleting..."
+                                    : "Delete Exam"}
+                            </button>
+
+                        </div>
+                    )
+                )
             )}
 
         </div>
