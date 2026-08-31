@@ -9,6 +9,17 @@ const questionSchema = new mongoose.Schema(
         },
 
         // =========================
+        // Question Type
+        // =========================
+
+        type: {
+            type: String,
+            enum: ["mcq", "coding"],
+            default: "mcq",
+            required: true
+        },
+
+        // =========================
         // Section
         // =========================
 
@@ -34,23 +45,45 @@ const questionSchema = new mongoose.Schema(
 
         options: {
             type: [String],
-            required: true,
-            validate: {
-                validator: function (value) {
-                    return value.length === 4;
-                },
-                message:
-                    "A question must have exactly 4 options"
-            }
+            default: []
         },
 
         // =========================
-        // Correct Answer
+        // MCQ Correct Answer
         // =========================
 
         correctAnswer: {
             type: String,
-            required: true
+            default: null
+        },
+
+        // =========================
+        // Coding Question
+        // =========================
+
+        inputDescription: {
+            type: String,
+            default: ""
+        },
+
+        outputDescription: {
+            type: String,
+            default: ""
+        },
+
+        constraints: {
+            type: String,
+            default: ""
+        },
+
+        sampleInput: {
+            type: String,
+            default: ""
+        },
+
+        sampleOutput: {
+            type: String,
+            default: ""
         },
 
         // =========================
@@ -61,6 +94,39 @@ const questionSchema = new mongoose.Schema(
             type: Number,
             required: true,
             min: 1
+        },
+
+        // =========================
+        // Coding Time Limit
+        // =========================
+
+        timeLimit: {
+            type: Number,
+            default: 2,
+            min: 1
+        },
+
+        // =========================
+        // Coding Memory Limit
+        // =========================
+
+        memoryLimit: {
+            type: Number,
+            default: 128,
+            min: 1
+        },
+
+        // =========================
+        // Allowed Languages
+        // =========================
+
+        allowedLanguages: {
+            type: [String],
+            default: [
+                "python",
+                "java",
+                "cpp"
+            ]
         }
     },
     {

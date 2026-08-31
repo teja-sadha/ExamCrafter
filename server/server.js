@@ -7,6 +7,8 @@ const authRoutes = require("./routes/authRoutes");
 const examRoutes = require("./routes/examRoutes");
 const questionRoutes = require("./routes/questionRoutes");
 const resultRoutes = require("./routes/resultRoutes");
+const codeExecutionRoutes =
+    require("./routes/codeExecutionRoutes");
 
 dotenv.config();
 
@@ -55,6 +57,15 @@ app.use(
 app.use(
     "/api/questions",
     questionRoutes
+);
+
+// =========================
+// Code Execution
+// =========================
+
+app.use(
+    "/api/code",
+    codeExecutionRoutes
 );
 
 // =========================

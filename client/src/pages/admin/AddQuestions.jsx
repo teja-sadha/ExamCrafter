@@ -6,46 +6,43 @@ function AddQuestions() {
     const { examId } = useParams();
     const navigate = useNavigate();
 
-    // =========================
-    // Form State
-    // =========================
-
     const [formData, setFormData] = useState({
+        type: "mcq",
         section: "",
         question: "",
+
+        // MCQ
         option1: "",
         option2: "",
         option3: "",
         option4: "",
         correctAnswer: "",
-        marks: 1
+
+        // Coding
+        inputDescription: "",
+        outputDescription: "",
+        constraints: "",
+        sampleInput: "",
+        sampleOutput: "",
+
+        // Common
+        marks: 1,
+        timeLimit: 2,
+        memoryLimit: 128,
+
+        allowedLanguages: [
+            "python",
+            "java",
+            "cpp"
+        ]
     });
 
-    // =========================
-    // Page State
-    // =========================
-
-    const [questions, setQuestions] =
-        useState([]);
-
-    const [
-        questionsLoading,
-        setQuestionsLoading
-    ] = useState(true);
-
-    const [error, setError] =
-        useState("");
-
-    const [success, setSuccess] =
-        useState("");
-
-    const [loading, setLoading] =
-        useState(false);
-
-    const [
-        editingQuestionId,
-        setEditingQuestionId
-    ] = useState(null);
+    const [questions, setQuestions] = useState([]);
+    const [questionsLoading, setQuestionsLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [editingQuestionId, setEditingQuestionId] = useState(null);
 
     // =========================
     // Fetch Questions
@@ -54,15 +51,13 @@ function AddQuestions() {
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
-                const response =
-                    await api.get(
-                        `/questions/exam/${examId}`
-                    );
+                const response = await api.get(
+                    `/questions/exam/${examId}`
+                );
 
                 setQuestions(
                     response.data.questions || []
                 );
-
             } catch (error) {
                 console.error(
                     "Fetch questions error:",
@@ -79,7 +74,6 @@ function AddQuestions() {
                         "Unable to connect to server"
                     );
                 }
-
             } finally {
                 setQuestionsLoading(false);
             }
@@ -93,17 +87,42 @@ function AddQuestions() {
     // =========================
 
     const handleChange = (e) => {
-        const {
-            name,
-            value
-        } = e.target;
+        const { name, value } = e.target;
 
-        setFormData(
-            (previousData) => ({
+        setFormData((previousData) => ({
+            ...previousData,
+            [name]: value
+        }));
+    };
+
+    // =========================
+    // Language Selection
+    // =========================
+
+    const handleLanguageChange = (language) => {
+        setFormData((previousData) => {
+            const languages =
+                previousData.allowedLanguages;
+
+            if (languages.includes(language)) {
+                return {
+                    ...previousData,
+                    allowedLanguages:
+                        languages.filter(
+                            (item) =>
+                                item !== language
+                        )
+                };
+            }
+
+            return {
                 ...previousData,
-                [name]: value
-            })
-        );
+                allowedLanguages: [
+                    ...languages,
+                    language
+                ]
+            };
+        });
     };
 
     // =========================
@@ -112,14 +131,31 @@ function AddQuestions() {
 
     const resetForm = () => {
         setFormData({
+            type: "mcq",
             section: "",
             question: "",
+
             option1: "",
             option2: "",
             option3: "",
             option4: "",
             correctAnswer: "",
-            marks: 1
+
+            inputDescription: "",
+            outputDescription: "",
+            constraints: "",
+            sampleInput: "",
+            sampleOutput: "",
+
+            marks: 1,
+            timeLimit: 2,
+            memoryLimit: 128,
+
+            allowedLanguages: [
+                "python",
+                "java",
+                "cpp"
+            ]
         });
 
         setEditingQuestionId(null);
@@ -133,34 +169,65 @@ function AddQuestions() {
         setError("");
         setSuccess("");
 
-        setEditingQuestionId(
-            question._id
-        );
+        setEditingQuestionId(question._id);
+
+        const questionType =
+            question.type || "mcq";
 
         setFormData({
+            type: questionType,
+
             section:
                 question.section || "",
 
             question:
-                question.question,
+                question.question || "",
 
             option1:
-                question.options[0] || "",
+                question.options?.[0] || "",
 
             option2:
-                question.options[1] || "",
+                question.options?.[1] || "",
 
             option3:
-                question.options[2] || "",
+                question.options?.[2] || "",
 
             option4:
-                question.options[3] || "",
+                question.options?.[3] || "",
 
             correctAnswer:
-                question.correctAnswer,
+                question.correctAnswer || "",
+
+            inputDescription:
+                question.inputDescription || "",
+
+            outputDescription:
+                question.outputDescription || "",
+
+            constraints:
+                question.constraints || "",
+
+            sampleInput:
+                question.sampleInput || "",
+
+            sampleOutput:
+                question.sampleOutput || "",
 
             marks:
-                question.marks
+                question.marks || 1,
+
+            timeLimit:
+                question.timeLimit || 2,
+
+            memoryLimit:
+                question.memoryLimit || 128,
+
+            allowedLanguages:
+                question.allowedLanguages || [
+                    "python",
+                    "java",
+                    "cpp"
+                ]
         });
 
         window.scrollTo({
@@ -170,7 +237,7 @@ function AddQuestions() {
     };
 
     // =========================
-    // Add / Update Question
+    // Submit
     // =========================
 
     const handleSubmit = async (e) => {
@@ -179,83 +246,200 @@ function AddQuestions() {
         setError("");
         setSuccess("");
 
-        // =========================
-        // Frontend Validation
-        // =========================
-
-        if (
-            !formData.section.trim()
-        ) {
+        // Section validation
+        if (!formData.section.trim()) {
             setError(
                 "Please enter a section name"
             );
-
             return;
         }
 
-        const options = [
-            formData.option1.trim(),
-            formData.option2.trim(),
-            formData.option3.trim(),
-            formData.option4.trim()
-        ];
-
-        if (
-            options.some(
-                (option) => !option
-            )
-        ) {
+        // Question validation
+        if (!formData.question.trim()) {
             setError(
-                "All four options are required"
+                "Please enter the question"
             );
-
             return;
         }
 
-        if (
-            !formData.correctAnswer
-        ) {
+        // Marks validation
+        if (Number(formData.marks) <= 0) {
             setError(
-                "Please select the correct answer"
+                "Marks must be greater than 0"
             );
-
             return;
+        }
+
+        // =========================
+        // MCQ Validation
+        // =========================
+
+        if (formData.type === "mcq") {
+            const options = [
+                formData.option1.trim(),
+                formData.option2.trim(),
+                formData.option3.trim(),
+                formData.option4.trim()
+            ];
+
+            if (
+                options.some(
+                    (option) => !option
+                )
+            ) {
+                setError(
+                    "All four options are required"
+                );
+                return;
+            }
+
+            if (!formData.correctAnswer) {
+                setError(
+                    "Please select the correct answer"
+                );
+                return;
+            }
+        }
+
+        // =========================
+        // Coding Validation
+        // =========================
+
+        if (formData.type === "coding") {
+            if (
+                !formData.inputDescription.trim()
+            ) {
+                setError(
+                    "Input description is required"
+                );
+                return;
+            }
+
+            if (
+                !formData.outputDescription.trim()
+            ) {
+                setError(
+                    "Output description is required"
+                );
+                return;
+            }
+
+            if (
+                !formData.sampleInput.trim()
+            ) {
+                setError(
+                    "Sample input is required"
+                );
+                return;
+            }
+
+            if (
+                !formData.sampleOutput.trim()
+            ) {
+                setError(
+                    "Sample output is required"
+                );
+                return;
+            }
+
+            if (
+                formData.allowedLanguages.length === 0
+            ) {
+                setError(
+                    "Select at least one programming language"
+                );
+                return;
+            }
+
+            if (
+                Number(formData.timeLimit) <= 0
+            ) {
+                setError(
+                    "Time limit must be greater than 0"
+                );
+                return;
+            }
+
+            if (
+                Number(formData.memoryLimit) <= 0
+            ) {
+                setError(
+                    "Memory limit must be greater than 0"
+                );
+                return;
+            }
         }
 
         try {
             setLoading(true);
 
             const questionData = {
+                type: formData.type,
+
                 section:
                     formData.section.trim(),
 
                 question:
                     formData.question.trim(),
 
-                options,
-
-                correctAnswer:
-                    formData.correctAnswer,
-
                 marks:
                     Number(formData.marks)
             };
+
+            // =========================
+            // MCQ Data
+            // =========================
+
+            if (formData.type === "mcq") {
+                questionData.options = [
+                    formData.option1.trim(),
+                    formData.option2.trim(),
+                    formData.option3.trim(),
+                    formData.option4.trim()
+                ];
+
+                questionData.correctAnswer =
+                    formData.correctAnswer;
+            }
+
+            // =========================
+            // Coding Data
+            // =========================
+
+            if (formData.type === "coding") {
+                questionData.inputDescription =
+                    formData.inputDescription.trim();
+
+                questionData.outputDescription =
+                    formData.outputDescription.trim();
+
+                questionData.constraints =
+                    formData.constraints.trim();
+
+                questionData.sampleInput =
+                    formData.sampleInput.trim();
+
+                questionData.sampleOutput =
+                    formData.sampleOutput.trim();
+
+                questionData.timeLimit =
+                    Number(formData.timeLimit);
+
+                questionData.memoryLimit =
+                    Number(formData.memoryLimit);
+
+                questionData.allowedLanguages =
+                    formData.allowedLanguages;
+            }
 
             // =========================
             // UPDATE
             // =========================
 
             if (editingQuestionId) {
-
-                const response =
-                    await api.put(
-                        `/questions/${editingQuestionId}`,
-                        questionData
-                    );
-
-                console.log(
-                    "Question updated:",
-                    response.data
+                const response = await api.put(
+                    `/questions/${editingQuestionId}`,
+                    questionData
                 );
 
                 setQuestions(
@@ -264,8 +448,7 @@ function AddQuestions() {
                             (question) =>
                                 question._id ===
                                 editingQuestionId
-                                    ? response.data
-                                          .question
+                                    ? response.data.question
                                     : question
                         )
                 );
@@ -275,7 +458,6 @@ function AddQuestions() {
                 );
 
                 resetForm();
-
             }
 
             // =========================
@@ -283,20 +465,12 @@ function AddQuestions() {
             // =========================
 
             else {
-
-                const response =
-                    await api.post(
-                        "/questions",
-                        {
-                            examId,
-
-                            ...questionData
-                        }
-                    );
-
-                console.log(
-                    "Question created:",
-                    response.data
+                const response = await api.post(
+                    "/questions",
+                    {
+                        examId,
+                        ...questionData
+                    }
                 );
 
                 setQuestions(
@@ -312,7 +486,6 @@ function AddQuestions() {
 
                 resetForm();
             }
-
         } catch (error) {
             console.error(
                 "Save question error:",
@@ -329,7 +502,6 @@ function AddQuestions() {
                     "Unable to connect to server"
                 );
             }
-
         } finally {
             setLoading(false);
         }
@@ -339,9 +511,7 @@ function AddQuestions() {
     // Delete Question
     // =========================
 
-    const handleDelete = async (
-        questionId
-    ) => {
+    const handleDelete = async (questionId) => {
         const confirmDelete =
             window.confirm(
                 "Are you sure you want to delete this question?"
@@ -378,7 +548,6 @@ function AddQuestions() {
             setSuccess(
                 "Question deleted successfully!"
             );
-
         } catch (error) {
             console.error(
                 "Delete question error:",
@@ -419,47 +588,30 @@ function AddQuestions() {
 
     return (
         <div>
-
-            {/* =========================
-                Page Heading
-            ========================= */}
-
             <h1>
                 Manage Questions
             </h1>
 
             <p>
-                Add, edit or delete MCQ
+                Create MCQ and coding
                 questions for this exam.
             </p>
 
-            {/* =========================
-                Messages
-            ========================= */}
+            {/* Messages */}
 
             {error && (
-                <p
-                    style={{
-                        color: "red"
-                    }}
-                >
+                <p style={{ color: "red" }}>
                     {error}
                 </p>
             )}
 
             {success && (
-                <p
-                    style={{
-                        color: "green"
-                    }}
-                >
+                <p style={{ color: "green" }}>
                     {success}
                 </p>
             )}
 
-            {/* =========================
-                Existing Questions
-            ========================= */}
+            {/* Existing Questions */}
 
             <h2>
                 Questions in this Exam
@@ -475,116 +627,213 @@ function AddQuestions() {
                 </p>
             ) : (
                 questions.map(
-                    (
-                        question,
-                        index
-                    ) => (
-                        <div
-                            key={
-                                question._id
-                            }
-                            style={{
-                                border:
-                                    "1px solid #ccc",
-                                padding:
-                                    "15px",
-                                marginBottom:
-                                    "15px",
-                                borderRadius:
-                                    "8px"
-                            }}
-                        >
+                    (question, index) => {
+                        const questionType =
+                            question.type || "mcq";
 
-                            {/* Section */}
+                        return (
+                            <div
+                                key={question._id}
+                                style={{
+                                    border:
+                                        "1px solid #ccc",
+                                    padding: "15px",
+                                    marginBottom:
+                                        "15px",
+                                    borderRadius:
+                                        "8px"
+                                }}
+                            >
+                                <p>
+                                    <strong>
+                                        Type:
+                                    </strong>{" "}
+                                    {questionType ===
+                                    "coding"
+                                        ? "Coding"
+                                        : "MCQ"}
+                                </p>
 
-                            <p>
-                                <strong>
-                                    Section:
-                                </strong>{" "}
-                                {question.section ||
-                                    "General"}
-                            </p>
+                                <p>
+                                    <strong>
+                                        Section:
+                                    </strong>{" "}
+                                    {question.section ||
+                                        "General"}
+                                </p>
 
-                            <h3>
-                                Q{index + 1}.{" "}
-                                {
-                                    question.question
-                                }
-                            </h3>
+                                <h3>
+                                    Q{index + 1}.{" "}
+                                    {question.question}
+                                </h3>
 
-                            <ol type="A">
+                                {/* MCQ */}
 
-                                {question.options.map(
-                                    (
-                                        option,
-                                        optionIndex
-                                    ) => (
-                                        <li
-                                            key={
-                                                optionIndex
+                                {questionType ===
+                                    "mcq" && (
+                                    <>
+                                        <ol type="A">
+                                            {(
+                                                question.options ||
+                                                []
+                                            ).map(
+                                                (
+                                                    option,
+                                                    optionIndex
+                                                ) => (
+                                                    <li
+                                                        key={
+                                                            optionIndex
+                                                        }
+                                                    >
+                                                        {
+                                                            option
+                                                        }
+                                                    </li>
+                                                )
+                                            )}
+                                        </ol>
+
+                                        <p>
+                                            <strong>
+                                                Correct Answer:
+                                            </strong>{" "}
+                                            {
+                                                question.correctAnswer
                                             }
-                                        >
-                                            {option}
-                                        </li>
-                                    )
+                                        </p>
+                                    </>
                                 )}
 
-                            </ol>
+                                {/* Coding */}
 
-                            <p>
-                                <strong>
-                                    Correct Answer:
-                                </strong>{" "}
-                                {
-                                    question.correctAnswer
-                                }
-                            </p>
+                                {questionType ===
+                                    "coding" && (
+                                    <>
+                                        <p>
+                                            <strong>
+                                                Input:
+                                            </strong>{" "}
+                                            {
+                                                question.inputDescription
+                                            }
+                                        </p>
 
-                            <p>
-                                <strong>
-                                    Marks:
-                                </strong>{" "}
-                                {
-                                    question.marks
-                                }
-                            </p>
+                                        <p>
+                                            <strong>
+                                                Output:
+                                            </strong>{" "}
+                                            {
+                                                question.outputDescription
+                                            }
+                                        </p>
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleEdit(
-                                        question
-                                    )
-                                }
-                            >
-                                Edit
-                            </button>
+                                        <p>
+                                            <strong>
+                                                Constraints:
+                                            </strong>{" "}
+                                            {
+                                                question.constraints ||
+                                                "Not specified"
+                                            }
+                                        </p>
 
-                            {" "}
+                                        <p>
+                                            <strong>
+                                                Sample Input:
+                                            </strong>
+                                        </p>
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleDelete(
-                                        question._id
-                                    )
-                                }
-                            >
-                                Delete
-                            </button>
+                                        <pre>
+                                            {
+                                                question.sampleInput
+                                            }
+                                        </pre>
 
-                        </div>
-                    )
+                                        <p>
+                                            <strong>
+                                                Sample Output:
+                                            </strong>
+                                        </p>
+
+                                        <pre>
+                                            {
+                                                question.sampleOutput
+                                            }
+                                        </pre>
+
+                                        <p>
+                                            <strong>
+                                                Time Limit:
+                                            </strong>{" "}
+                                            {
+                                                question.timeLimit
+                                            }{" "}
+                                            seconds
+                                        </p>
+
+                                        <p>
+                                            <strong>
+                                                Memory Limit:
+                                            </strong>{" "}
+                                            {
+                                                question.memoryLimit
+                                            }{" "}
+                                            MB
+                                        </p>
+
+                                        <p>
+                                            <strong>
+                                                Allowed Languages:
+                                            </strong>{" "}
+                                            {(
+                                                question.allowedLanguages ||
+                                                []
+                                            ).join(", ")}
+                                        </p>
+                                    </>
+                                )}
+
+                                <p>
+                                    <strong>
+                                        Marks:
+                                    </strong>{" "}
+                                    {question.marks}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleEdit(
+                                            question
+                                        )
+                                    }
+                                >
+                                    Edit
+                                </button>
+
+                                {" "}
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDelete(
+                                            question._id
+                                        )
+                                    }
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        );
+                    }
                 )
             )}
 
-            {/* =========================
-                Existing Sections
-            ========================= */}
+            {/* Sections */}
 
             {sections.length > 0 && (
                 <div>
-
                     <h3>
                         Sections
                     </h3>
@@ -592,31 +841,21 @@ function AddQuestions() {
                     {sections.map(
                         (section) => (
                             <span
-                                key={
-                                    section
-                                }
+                                key={section}
                                 style={{
                                     display:
                                         "inline-block",
-
                                     padding:
                                         "6px 12px",
-
-                                    margin:
-                                        "4px",
-
+                                    margin: "4px",
                                     borderRadius:
                                         "20px",
-
                                     background:
                                         "#eef2ff",
-
                                     color:
                                         "#4f46e5",
-
                                     fontSize:
                                         "13px",
-
                                     fontWeight:
                                         "600"
                                 }}
@@ -625,15 +864,12 @@ function AddQuestions() {
                             </span>
                         )
                     )}
-
                 </div>
             )}
 
             <hr />
 
-            {/* =========================
-                Add / Edit Form
-            ========================= */}
+            {/* Question Form */}
 
             <h2>
                 {editingQuestionId
@@ -642,17 +878,57 @@ function AddQuestions() {
             </h2>
 
             <form
-                onSubmit={
-                    handleSubmit
-                }
+                onSubmit={handleSubmit}
             >
-
-                {/* =========================
-                    Section
-                ========================= */}
+                {/* Question Type */}
 
                 <div>
+                    <label>
+                        Question Type
+                    </label>
 
+                    <br />
+
+                    <select
+                        name="type"
+                        value={formData.type}
+                        onChange={handleChange}
+                        disabled={
+                            Boolean(
+                                editingQuestionId
+                            )
+                        }
+                    >
+                        <option value="mcq">
+                            Multiple Choice (MCQ)
+                        </option>
+
+                        <option value="coding">
+                            Coding Problem
+                        </option>
+                    </select>
+
+                    {editingQuestionId && (
+                        <p
+                            style={{
+                                color:
+                                    "#64748b",
+                                fontSize:
+                                    "12px"
+                            }}
+                        >
+                            Question type cannot
+                            be changed while
+                            editing.
+                        </p>
+                    )}
+                </div>
+
+                <br />
+
+                {/* Section */}
+
+                <div>
                     <label>
                         Section
                     </label>
@@ -679,12 +955,8 @@ function AddQuestions() {
                         {sections.map(
                             (section) => (
                                 <option
-                                    key={
-                                        section
-                                    }
-                                    value={
-                                        section
-                                    }
+                                    key={section}
+                                    value={section}
                                 />
                             )
                         )}
@@ -702,19 +974,18 @@ function AddQuestions() {
                         Technical,
                         Programming
                     </p>
-
                 </div>
 
                 <br />
 
-                {/* =========================
-                    Question
-                ========================= */}
+                {/* Question / Problem Statement */}
 
                 <div>
-
                     <label>
-                        Question
+                        {formData.type ===
+                        "coding"
+                            ? "Problem Statement"
+                            : "Question"}
                     </label>
 
                     <br />
@@ -727,206 +998,409 @@ function AddQuestions() {
                         onChange={
                             handleChange
                         }
-                        placeholder="Enter question"
-                        rows="4"
+                        placeholder={
+                            formData.type ===
+                            "coding"
+                                ? "Describe the coding problem"
+                                : "Enter question"
+                        }
+                        rows="5"
                         required
                     />
-
                 </div>
 
                 <br />
 
-                {/* =========================
-                    Option 1
-                ========================= */}
+                {/* MCQ */}
+
+                {formData.type === "mcq" && (
+                    <>
+                        <div>
+                            <label>
+                                Option 1
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="text"
+                                name="option1"
+                                value={
+                                    formData.option1
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter option 1"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Option 2
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="text"
+                                name="option2"
+                                value={
+                                    formData.option2
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter option 2"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Option 3
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="text"
+                                name="option3"
+                                value={
+                                    formData.option3
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter option 3"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Option 4
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="text"
+                                name="option4"
+                                value={
+                                    formData.option4
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter option 4"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Correct Answer
+                            </label>
+
+                            <br />
+
+                            <select
+                                name="correctAnswer"
+                                value={
+                                    formData.correctAnswer
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                required
+                            >
+                                <option value="">
+                                    Select correct answer
+                                </option>
+
+                                <option
+                                    value={
+                                        formData.option1
+                                    }
+                                >
+                                    {formData.option1 ||
+                                        "Option 1"}
+                                </option>
+
+                                <option
+                                    value={
+                                        formData.option2
+                                    }
+                                >
+                                    {formData.option2 ||
+                                        "Option 2"}
+                                </option>
+
+                                <option
+                                    value={
+                                        formData.option3
+                                    }
+                                >
+                                    {formData.option3 ||
+                                        "Option 3"}
+                                </option>
+
+                                <option
+                                    value={
+                                        formData.option4
+                                    }
+                                >
+                                    {formData.option4 ||
+                                        "Option 4"}
+                                </option>
+                            </select>
+                        </div>
+
+                        <br />
+                    </>
+                )}
+
+                {/* Coding */}
+
+                {formData.type === "coding" && (
+                    <>
+                        <div>
+                            <label>
+                                Input Description
+                            </label>
+
+                            <br />
+
+                            <textarea
+                                name="inputDescription"
+                                value={
+                                    formData.inputDescription
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Describe the input format"
+                                rows="4"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Output Description
+                            </label>
+
+                            <br />
+
+                            <textarea
+                                name="outputDescription"
+                                value={
+                                    formData.outputDescription
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Describe the expected output"
+                                rows="4"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Constraints
+                            </label>
+
+                            <br />
+
+                            <textarea
+                                name="constraints"
+                                value={
+                                    formData.constraints
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Example: 1 <= n <= 100000"
+                                rows="4"
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Sample Input
+                            </label>
+
+                            <br />
+
+                            <textarea
+                                name="sampleInput"
+                                value={
+                                    formData.sampleInput
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder={"Example: 5\n10 20 30 40 50"}
+                                rows="5"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Sample Output
+                            </label>
+
+                            <br />
+
+                            <textarea
+                                name="sampleOutput"
+                                value={
+                                    formData.sampleOutput
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Example: 50"
+                                rows="4"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Time Limit (seconds)
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="number"
+                                name="timeLimit"
+                                value={
+                                    formData.timeLimit
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                min="1"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Memory Limit (MB)
+                            </label>
+
+                            <br />
+
+                            <input
+                                type="number"
+                                name="memoryLimit"
+                                value={
+                                    formData.memoryLimit
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                min="1"
+                                required
+                            />
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Allowed Languages
+                            </label>
+
+                            <br />
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.allowedLanguages.includes(
+                                        "python"
+                                    )}
+                                    onChange={() =>
+                                        handleLanguageChange(
+                                            "python"
+                                        )
+                                    }
+                                />
+                                {" "}
+                                Python
+                            </label>
+
+                            <br />
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.allowedLanguages.includes(
+                                        "java"
+                                    )}
+                                    onChange={() =>
+                                        handleLanguageChange(
+                                            "java"
+                                        )
+                                    }
+                                />
+                                {" "}
+                                Java
+                            </label>
+
+                            <br />
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.allowedLanguages.includes(
+                                        "cpp"
+                                    )}
+                                    onChange={() =>
+                                        handleLanguageChange(
+                                            "cpp"
+                                        )
+                                    }
+                                />
+                                {" "}
+                                C++
+                            </label>
+                        </div>
+
+                        <br />
+                    </>
+                )}
+
+                {/* Marks */}
 
                 <div>
-
-                    <label>
-                        Option 1
-                    </label>
-
-                    <br />
-
-                    <input
-                        type="text"
-                        name="option1"
-                        value={
-                            formData.option1
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        placeholder="Enter option 1"
-                        required
-                    />
-
-                </div>
-
-                <br />
-
-                {/* =========================
-                    Option 2
-                ========================= */}
-
-                <div>
-
-                    <label>
-                        Option 2
-                    </label>
-
-                    <br />
-
-                    <input
-                        type="text"
-                        name="option2"
-                        value={
-                            formData.option2
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        placeholder="Enter option 2"
-                        required
-                    />
-
-                </div>
-
-                <br />
-
-                {/* =========================
-                    Option 3
-                ========================= */}
-
-                <div>
-
-                    <label>
-                        Option 3
-                    </label>
-
-                    <br />
-
-                    <input
-                        type="text"
-                        name="option3"
-                        value={
-                            formData.option3
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        placeholder="Enter option 3"
-                        required
-                    />
-
-                </div>
-
-                <br />
-
-                {/* =========================
-                    Option 4
-                ========================= */}
-
-                <div>
-
-                    <label>
-                        Option 4
-                    </label>
-
-                    <br />
-
-                    <input
-                        type="text"
-                        name="option4"
-                        value={
-                            formData.option4
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        placeholder="Enter option 4"
-                        required
-                    />
-
-                </div>
-
-                <br />
-
-                {/* =========================
-                    Correct Answer
-                ========================= */}
-
-                <div>
-
-                    <label>
-                        Correct Answer
-                    </label>
-
-                    <br />
-
-                    <select
-                        name="correctAnswer"
-                        value={
-                            formData.correctAnswer
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        required
-                    >
-
-                        <option value="">
-                            Select correct answer
-                        </option>
-
-                        <option
-                            value={
-                                formData.option1
-                            }
-                        >
-                            {formData.option1 ||
-                                "Option 1"}
-                        </option>
-
-                        <option
-                            value={
-                                formData.option2
-                            }
-                        >
-                            {formData.option2 ||
-                                "Option 2"}
-                        </option>
-
-                        <option
-                            value={
-                                formData.option3
-                            }
-                        >
-                            {formData.option3 ||
-                                "Option 3"}
-                        </option>
-
-                        <option
-                            value={
-                                formData.option4
-                            }
-                        >
-                            {formData.option4 ||
-                                "Option 4"}
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <br />
-
-                {/* =========================
-                    Marks
-                ========================= */}
-
-                <div>
-
                     <label>
                         Marks
                     </label>
@@ -945,14 +1419,11 @@ function AddQuestions() {
                         min="1"
                         required
                     />
-
                 </div>
 
                 <br />
 
-                {/* =========================
-                    Submit
-                ========================= */}
+                {/* Buttons */}
 
                 <button
                     type="submit"
@@ -967,24 +1438,16 @@ function AddQuestions() {
 
                 {" "}
 
-                {/* Cancel Edit */}
-
                 {editingQuestionId && (
-                    <>
-                        <button
-                            type="button"
-                            onClick={
-                                resetForm
-                            }
-                        >
-                            Cancel Edit
-                        </button>
-
-                        {" "}
-                    </>
+                    <button
+                        type="button"
+                        onClick={resetForm}
+                    >
+                        Cancel Edit
+                    </button>
                 )}
 
-                {/* Back */}
+                {" "}
 
                 <button
                     type="button"
@@ -996,9 +1459,7 @@ function AddQuestions() {
                 >
                     Back to Exams
                 </button>
-
             </form>
-
         </div>
     );
 }
