@@ -34,13 +34,19 @@ function StudentExam() {
                 const examData = response.data.exam;
 
                 setExam(examData);
+
                 setQuestions(
                     response.data.questions || []
                 );
 
-                // Restore answers
+                // =========================
+                // Restore Answers
+                // =========================
+
                 const savedAnswers =
-                    localStorage.getItem(answersKey);
+                    localStorage.getItem(
+                        answersKey
+                    );
 
                 if (savedAnswers) {
                     try {
@@ -59,14 +65,20 @@ function StudentExam() {
                     }
                 }
 
-                // Restore timer
+                // =========================
+                // Restore Timer
+                // =========================
+
                 const savedEndTime =
-                    localStorage.getItem(timerKey);
+                    localStorage.getItem(
+                        timerKey
+                    );
 
                 let endTime;
 
                 if (savedEndTime) {
-                    endTime = Number(savedEndTime);
+                    endTime =
+                        Number(savedEndTime);
                 } else {
                     endTime =
                         Date.now() +
@@ -80,14 +92,19 @@ function StudentExam() {
                     );
                 }
 
-                const remainingSeconds = Math.max(
-                    0,
-                    Math.ceil(
-                        (endTime - Date.now()) / 1000
-                    )
-                );
+                const remainingSeconds =
+                    Math.max(
+                        0,
+                        Math.ceil(
+                            (endTime -
+                                Date.now()) /
+                                1000
+                        )
+                    );
 
-                setTimeLeft(remainingSeconds);
+                setTimeLeft(
+                    remainingSeconds
+                );
 
             } catch (error) {
                 console.error(
@@ -97,7 +114,8 @@ function StudentExam() {
 
                 if (error.response) {
                     setError(
-                        error.response.data.message ||
+                        error.response.data
+                            .message ||
                         "Failed to load exam"
                     );
                 } else {
@@ -105,6 +123,7 @@ function StudentExam() {
                         "Unable to connect to server"
                     );
                 }
+
             } finally {
                 setLoading(false);
             }
@@ -128,15 +147,18 @@ function StudentExam() {
     // Submit Exam
     // =========================
 
-    const handleSubmit = async (automatic = false) => {
+    const handleSubmit = async (
+        automatic = false
+    ) => {
         if (submitting) {
             return;
         }
 
         if (!automatic) {
-            const confirmed = window.confirm(
-                "Are you sure you want to submit the exam?"
-            );
+            const confirmed =
+                window.confirm(
+                    "Are you sure you want to submit the exam?"
+                );
 
             if (!confirmed) {
                 return;
@@ -147,20 +169,48 @@ function StudentExam() {
             setSubmitting(true);
             setError("");
 
-            const response = await api.post(
-                `/results/exam/${id}`,
-                {
-                    answers
-                }
-            );
+            const response =
+                await api.post(
+                    `/results/exam/${id}`,
+                    {
+                        answers
+                    }
+                );
 
             console.log(
                 "Exam submitted:",
                 response.data
             );
 
-            localStorage.removeItem(timerKey);
-            localStorage.removeItem(answersKey);
+            // =========================
+            // Clear Saved Exam Data
+            // =========================
+
+            localStorage.removeItem(
+                timerKey
+            );
+
+            localStorage.removeItem(
+                answersKey
+            );
+
+            // =========================
+            // Exit Fullscreen
+            // =========================
+
+            if (
+                document.fullscreenElement &&
+                document.exitFullscreen
+            ) {
+                try {
+                    await document.exitFullscreen();
+                } catch (fullscreenError) {
+                    console.error(
+                        "Exit fullscreen error:",
+                        fullscreenError
+                    );
+                }
+            }
 
             navigate(
                 `/student/results/${id}`
@@ -174,7 +224,8 @@ function StudentExam() {
 
             if (error.response) {
                 setError(
-                    error.response.data.message ||
+                    error.response.data
+                        .message ||
                     "Failed to submit exam"
                 );
             } else {
@@ -200,22 +251,35 @@ function StudentExam() {
             return;
         }
 
-        const timer = setInterval(() => {
-            setTimeLeft((previousTime) => {
-                if (
-                    previousTime === null ||
-                    previousTime <= 1
-                ) {
-                    clearInterval(timer);
-                    return 0;
-                }
+        const timer =
+            setInterval(() => {
+                setTimeLeft(
+                    (previousTime) => {
+                        if (
+                            previousTime ===
+                                null ||
+                            previousTime <= 1
+                        ) {
+                            clearInterval(
+                                timer
+                            );
 
-                return previousTime - 1;
-            });
-        }, 1000);
+                            return 0;
+                        }
 
-        return () => clearInterval(timer);
-    }, [timeLeft, submitting]);
+                        return (
+                            previousTime - 1
+                        );
+                    }
+                );
+            }, 1000);
+
+        return () =>
+            clearInterval(timer);
+    }, [
+        timeLeft,
+        submitting
+    ]);
 
     // =========================
     // Automatic Submission
@@ -228,9 +292,14 @@ function StudentExam() {
             !submitting
         ) {
             setTimeUp(true);
+
             handleSubmit(true);
         }
-    }, [timeLeft, exam, submitting]);
+    }, [
+        timeLeft,
+        exam,
+        submitting
+    ]);
 
     // =========================
     // Format Time
@@ -241,37 +310,48 @@ function StudentExam() {
             return "--:--";
         }
 
-        const minutes = Math.floor(
-            seconds / 60
-        );
+        const minutes =
+            Math.floor(seconds / 60);
 
         const remainingSeconds =
             seconds % 60;
 
-        return `${String(minutes).padStart(
+        return `${String(
+            minutes
+        ).padStart(
             2,
             "0"
         )}:${String(
             remainingSeconds
-        ).padStart(2, "0")}`;
+        ).padStart(
+            2,
+            "0"
+        )}`;
     };
 
     // =========================
     // Select Answer
     // =========================
 
-    const handleAnswer = (answer) => {
+    const handleAnswer = (
+        answer
+    ) => {
         if (submitting) {
             return;
         }
 
         const questionId =
-            questions[currentQuestion]._id;
+            questions[
+                currentQuestion
+            ]._id;
 
-        setAnswers((previousAnswers) => ({
-            ...previousAnswers,
-            [questionId]: answer
-        }));
+        setAnswers(
+            (previousAnswers) => ({
+                ...previousAnswers,
+                [questionId]:
+                    answer
+            })
+        );
     };
 
     // =========================
@@ -285,7 +365,8 @@ function StudentExam() {
             !submitting
         ) {
             setCurrentQuestion(
-                (previous) => previous + 1
+                (previous) =>
+                    previous + 1
             );
         }
     };
@@ -296,7 +377,8 @@ function StudentExam() {
             !submitting
         ) {
             setCurrentQuestion(
-                (previous) => previous - 1
+                (previous) =>
+                    previous - 1
             );
         }
     };
@@ -308,12 +390,17 @@ function StudentExam() {
     if (loading) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-loading">
+
                     <div className="exam-spinner"></div>
+
                     <p>
                         Preparing your exam...
                     </p>
+
                 </div>
+
             </div>
         );
     }
@@ -325,7 +412,9 @@ function StudentExam() {
     if (error && !exam) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-message-card">
+
                     <div className="message-icon">
                         !
                     </div>
@@ -334,7 +423,9 @@ function StudentExam() {
                         Unable to load exam
                     </h2>
 
-                    <p>{error}</p>
+                    <p>
+                        {error}
+                    </p>
 
                     <button
                         onClick={() =>
@@ -345,7 +436,9 @@ function StudentExam() {
                     >
                         Back to Exams
                     </button>
+
                 </div>
+
             </div>
         );
     }
@@ -360,6 +453,7 @@ function StudentExam() {
     ) {
         return (
             <div className="student-exam-page">
+
                 <div className="exam-message-card">
 
                     <div className="message-icon">
@@ -386,9 +480,14 @@ function StudentExam() {
                     </button>
 
                 </div>
+
             </div>
         );
     }
+
+    // =========================
+    // Current Question
+    // =========================
 
     const question =
         questions[currentQuestion];
@@ -397,7 +496,9 @@ function StudentExam() {
         answers[question._id];
 
     const answeredCount =
-        Object.keys(answers).length;
+        Object.keys(
+            answers
+        ).length;
 
     const progress =
         ((currentQuestion + 1) /
@@ -411,6 +512,46 @@ function StudentExam() {
     const isWarningTime =
         timeLeft !== null &&
         timeLeft <= 60;
+
+    // =========================
+    // Current Section
+    // =========================
+
+    const currentSection =
+        question.section ||
+        "General";
+
+    // =========================
+    // Get Sections
+    // =========================
+
+    const sections = [
+        ...new Set(
+            questions.map(
+                (item) =>
+                    item.section ||
+                    "General"
+            )
+        )
+    ];
+
+    // =========================
+    // Section Question Count
+    // =========================
+
+    const sectionQuestions =
+        questions.filter(
+            (item) =>
+                (item.section ||
+                    "General") ===
+                currentSection
+        );
+
+    const sectionAnswered =
+        sectionQuestions.filter(
+            (item) =>
+                answers[item._id]
+        ).length;
 
     return (
         <div className="student-exam-page">
@@ -442,11 +583,13 @@ function StudentExam() {
                                 : ""
                         }`}
                     >
+
                         <span className="timer-icon">
                             ⏱
                         </span>
 
                         <div>
+
                             <small>
                                 Time Remaining
                             </small>
@@ -456,7 +599,9 @@ function StudentExam() {
                                     timeLeft
                                 )}
                             </strong>
+
                         </div>
+
                     </div>
 
                 </header>
@@ -482,6 +627,98 @@ function StudentExam() {
                     )}
 
                 {/* =========================
+                    Section Navigation
+                ========================= */}
+
+                {sections.length > 1 && (
+                    <div className="exam-sections-bar">
+
+                        <div className="sections-title">
+                            Sections
+                        </div>
+
+                        <div className="sections-list">
+
+                            {sections.map(
+                                (section) => {
+
+                                    const firstIndex =
+                                        questions.findIndex(
+                                            (
+                                                item
+                                            ) =>
+                                                (
+                                                    item.section ||
+                                                    "General"
+                                                ) ===
+                                                section
+                                        );
+
+                                    const isActive =
+                                        section ===
+                                        currentSection;
+
+                                    const sectionCount =
+                                        questions.filter(
+                                            (
+                                                item
+                                            ) =>
+                                                (
+                                                    item.section ||
+                                                    "General"
+                                                ) ===
+                                                section
+                                        ).length;
+
+                                    return (
+                                        <button
+                                            key={
+                                                section
+                                            }
+                                            type="button"
+                                            className={`section-tab ${
+                                                isActive
+                                                    ? "active"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                !submitting &&
+                                                setCurrentQuestion(
+                                                    firstIndex
+                                                )
+                                            }
+                                            disabled={
+                                                submitting
+                                            }
+                                        >
+
+                                            <span>
+                                                {
+                                                    section
+                                                }
+                                            </span>
+
+                                            <small>
+                                                {
+                                                    sectionCount
+                                                }{" "}
+                                                {sectionCount ===
+                                                1
+                                                    ? "Q"
+                                                    : "Qs"}
+                                            </small>
+
+                                        </button>
+                                    );
+                                }
+                            )}
+
+                        </div>
+
+                    </div>
+                )}
+
+                {/* =========================
                     Progress
                 ========================= */}
 
@@ -492,7 +729,8 @@ function StudentExam() {
                         <span>
                             Question{" "}
                             <strong>
-                                {currentQuestion + 1}
+                                {currentQuestion +
+                                    1}
                             </strong>{" "}
                             of{" "}
                             {questions.length}
@@ -505,12 +743,14 @@ function StudentExam() {
                     </div>
 
                     <div className="progress-track">
+
                         <div
                             className="progress-fill"
                             style={{
                                 width: `${progress}%`
                             }}
                         ></div>
+
                     </div>
 
                 </div>
@@ -522,14 +762,25 @@ function StudentExam() {
                 <div className="question-numbers">
 
                     {questions.map(
-                        (item, index) => {
+                        (
+                            item,
+                            index
+                        ) => {
 
                             const answered =
-                                answers[item._id];
+                                answers[
+                                    item._id
+                                ];
+
+                            const itemSection =
+                                item.section ||
+                                "General";
 
                             return (
                                 <button
-                                    key={item._id}
+                                    key={
+                                        item._id
+                                    }
                                     className={`question-number ${
                                         currentQuestion ===
                                         index
@@ -540,6 +791,9 @@ function StudentExam() {
                                             ? "answered"
                                             : ""
                                     }`}
+                                    title={
+                                        itemSection
+                                    }
                                     onClick={() =>
                                         !submitting &&
                                         setCurrentQuestion(
@@ -564,21 +818,52 @@ function StudentExam() {
 
                 <main className="question-card">
 
+                    {/* Section Header */}
+
+                    <div className="question-section-header">
+
+                        <div>
+
+                            <span className="section-label">
+                                SECTION
+                            </span>
+
+                            <h3>
+                                {currentSection}
+                            </h3>
+
+                        </div>
+
+                        <span className="section-progress">
+                            {sectionAnswered}/
+                            {
+                                sectionQuestions.length
+                            } answered
+                        </span>
+
+                    </div>
+
+                    {/* Question Header */}
+
                     <div className="question-card-header">
 
                         <span className="question-label">
                             Question{" "}
-                            {currentQuestion + 1}
+                            {currentQuestion +
+                                1}
                         </span>
 
                         <span className="marks-badge">
                             {question.marks}{" "}
-                            {question.marks === 1
+                            {question.marks ===
+                            1
                                 ? "Mark"
                                 : "Marks"}
                         </span>
 
                     </div>
+
+                    {/* Question */}
 
                     <h2 className="question-text">
                         {question.question}
@@ -588,10 +873,17 @@ function StudentExam() {
                         Select the best answer
                     </p>
 
+                    {/* =========================
+                        Options
+                    ========================= */}
+
                     <div className="options-list">
 
                         {question.options.map(
-                            (option, index) => {
+                            (
+                                option,
+                                index
+                            ) => {
 
                                 const isSelected =
                                     selectedAnswer ===
@@ -599,7 +891,9 @@ function StudentExam() {
 
                                 return (
                                     <label
-                                        key={index}
+                                        key={
+                                            index
+                                        }
                                         className={`option-card ${
                                             isSelected
                                                 ? "selected"
@@ -612,7 +906,9 @@ function StudentExam() {
                                             name={
                                                 question._id
                                             }
-                                            value={option}
+                                            value={
+                                                option
+                                            }
                                             checked={
                                                 isSelected
                                             }
@@ -628,12 +924,15 @@ function StudentExam() {
 
                                         <span className="option-letter">
                                             {String.fromCharCode(
-                                                65 + index
+                                                65 +
+                                                    index
                                             )}
                                         </span>
 
                                         <span className="option-text">
-                                            {option}
+                                            {
+                                                option
+                                            }
                                         </span>
 
                                         <span className="option-check">
@@ -670,14 +969,18 @@ function StudentExam() {
                     </button>
 
                     <div className="answer-count">
+
                         <strong>
                             {answeredCount}
                         </strong>
+
                         /
                         {questions.length}
+
                         <span>
                             Answered
                         </span>
+
                     </div>
 
                     {!isLastQuestion ? (

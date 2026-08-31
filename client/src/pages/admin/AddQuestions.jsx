@@ -11,6 +11,7 @@ function AddQuestions() {
     // =========================
 
     const [formData, setFormData] = useState({
+        section: "",
         question: "",
         option1: "",
         option2: "",
@@ -24,17 +25,27 @@ function AddQuestions() {
     // Page State
     // =========================
 
-    const [questions, setQuestions] = useState([]);
-    const [questionsLoading, setQuestionsLoading] =
-        useState(true);
+    const [questions, setQuestions] =
+        useState([]);
 
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [
+        questionsLoading,
+        setQuestionsLoading
+    ] = useState(true);
 
-    // Editing question ID
-    const [editingQuestionId, setEditingQuestionId] =
-        useState(null);
+    const [error, setError] =
+        useState("");
+
+    const [success, setSuccess] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
+
+    const [
+        editingQuestionId,
+        setEditingQuestionId
+    ] = useState(null);
 
     // =========================
     // Fetch Questions
@@ -43,12 +54,13 @@ function AddQuestions() {
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
-                const response = await api.get(
-                    `/questions/exam/${examId}`
-                );
+                const response =
+                    await api.get(
+                        `/questions/exam/${examId}`
+                    );
 
                 setQuestions(
-                    response.data.questions
+                    response.data.questions || []
                 );
 
             } catch (error) {
@@ -77,16 +89,21 @@ function AddQuestions() {
     }, [examId]);
 
     // =========================
-    // Handle Input Changes
+    // Handle Input
     // =========================
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const {
+            name,
+            value
+        } = e.target;
 
-        setFormData((previousData) => ({
-            ...previousData,
-            [name]: value
-        }));
+        setFormData(
+            (previousData) => ({
+                ...previousData,
+                [name]: value
+            })
+        );
     };
 
     // =========================
@@ -95,6 +112,7 @@ function AddQuestions() {
 
     const resetForm = () => {
         setFormData({
+            section: "",
             question: "",
             option1: "",
             option2: "",
@@ -120,17 +138,31 @@ function AddQuestions() {
         );
 
         setFormData({
-            question: question.question,
-            option1: question.options[0] || "",
-            option2: question.options[1] || "",
-            option3: question.options[2] || "",
-            option4: question.options[3] || "",
+            section:
+                question.section || "",
+
+            question:
+                question.question,
+
+            option1:
+                question.options[0] || "",
+
+            option2:
+                question.options[1] || "",
+
+            option3:
+                question.options[2] || "",
+
+            option4:
+                question.options[3] || "",
+
             correctAnswer:
                 question.correctAnswer,
-            marks: question.marks
+
+            marks:
+                question.marks
         });
 
-        // Scroll to form
         window.scrollTo({
             top: document.body.scrollHeight,
             behavior: "smooth"
@@ -147,26 +179,66 @@ function AddQuestions() {
         setError("");
         setSuccess("");
 
+        // =========================
+        // Frontend Validation
+        // =========================
+
+        if (
+            !formData.section.trim()
+        ) {
+            setError(
+                "Please enter a section name"
+            );
+
+            return;
+        }
+
+        const options = [
+            formData.option1.trim(),
+            formData.option2.trim(),
+            formData.option3.trim(),
+            formData.option4.trim()
+        ];
+
+        if (
+            options.some(
+                (option) => !option
+            )
+        ) {
+            setError(
+                "All four options are required"
+            );
+
+            return;
+        }
+
+        if (
+            !formData.correctAnswer
+        ) {
+            setError(
+                "Please select the correct answer"
+            );
+
+            return;
+        }
+
         try {
             setLoading(true);
 
             const questionData = {
-                question:
-                    formData.question,
+                section:
+                    formData.section.trim(),
 
-                options: [
-                    formData.option1,
-                    formData.option2,
-                    formData.option3,
-                    formData.option4
-                ],
+                question:
+                    formData.question.trim(),
+
+                options,
 
                 correctAnswer:
                     formData.correctAnswer,
 
-                marks: Number(
-                    formData.marks
-                )
+                marks:
+                    Number(formData.marks)
             };
 
             // =========================
@@ -174,6 +246,7 @@ function AddQuestions() {
             // =========================
 
             if (editingQuestionId) {
+
                 const response =
                     await api.put(
                         `/questions/${editingQuestionId}`,
@@ -185,7 +258,6 @@ function AddQuestions() {
                     response.data
                 );
 
-                // Update question in list
                 setQuestions(
                     (previousQuestions) =>
                         previousQuestions.map(
@@ -211,11 +283,12 @@ function AddQuestions() {
             // =========================
 
             else {
+
                 const response =
                     await api.post(
                         "/questions",
                         {
-                            examId: examId,
+                            examId,
 
                             ...questionData
                         }
@@ -226,7 +299,6 @@ function AddQuestions() {
                     response.data
                 );
 
-                // Add new question to list
                 setQuestions(
                     (previousQuestions) => [
                         ...previousQuestions,
@@ -287,7 +359,6 @@ function AddQuestions() {
                 `/questions/${questionId}`
             );
 
-            // Remove deleted question
             setQuestions(
                 (previousQuestions) =>
                     previousQuestions.filter(
@@ -297,8 +368,6 @@ function AddQuestions() {
                     )
             );
 
-            // If currently editing
-            // this question, reset form
             if (
                 editingQuestionId ===
                 questionId
@@ -330,6 +399,21 @@ function AddQuestions() {
     };
 
     // =========================
+    // Existing Sections
+    // =========================
+
+    const sections = [
+        ...new Set(
+            questions
+                .map(
+                    (question) =>
+                        question.section
+                )
+                .filter(Boolean)
+        )
+    ];
+
+    // =========================
     // UI
     // =========================
 
@@ -354,13 +438,21 @@ function AddQuestions() {
             ========================= */}
 
             {error && (
-                <p style={{ color: "red" }}>
+                <p
+                    style={{
+                        color: "red"
+                    }}
+                >
                     {error}
                 </p>
             )}
 
             {success && (
-                <p style={{ color: "green" }}>
+                <p
+                    style={{
+                        color: "green"
+                    }}
+                >
                     {success}
                 </p>
             )}
@@ -383,7 +475,10 @@ function AddQuestions() {
                 </p>
             ) : (
                 questions.map(
-                    (question, index) => (
+                    (
+                        question,
+                        index
+                    ) => (
                         <div
                             key={
                                 question._id
@@ -394,9 +489,21 @@ function AddQuestions() {
                                 padding:
                                     "15px",
                                 marginBottom:
-                                    "15px"
+                                    "15px",
+                                borderRadius:
+                                    "8px"
                             }}
                         >
+
+                            {/* Section */}
+
+                            <p>
+                                <strong>
+                                    Section:
+                                </strong>{" "}
+                                {question.section ||
+                                    "General"}
+                            </p>
 
                             <h3>
                                 Q{index + 1}.{" "}
@@ -406,6 +513,7 @@ function AddQuestions() {
                             </h3>
 
                             <ol type="A">
+
                                 {question.options.map(
                                     (
                                         option,
@@ -420,6 +528,7 @@ function AddQuestions() {
                                         </li>
                                     )
                                 )}
+
                             </ol>
 
                             <p>
@@ -440,8 +549,6 @@ function AddQuestions() {
                                 }
                             </p>
 
-                            {/* Edit */}
-
                             <button
                                 type="button"
                                 onClick={() =>
@@ -454,8 +561,6 @@ function AddQuestions() {
                             </button>
 
                             {" "}
-
-                            {/* Delete */}
 
                             <button
                                 type="button"
@@ -474,6 +579,59 @@ function AddQuestions() {
             )}
 
             {/* =========================
+                Existing Sections
+            ========================= */}
+
+            {sections.length > 0 && (
+                <div>
+
+                    <h3>
+                        Sections
+                    </h3>
+
+                    {sections.map(
+                        (section) => (
+                            <span
+                                key={
+                                    section
+                                }
+                                style={{
+                                    display:
+                                        "inline-block",
+
+                                    padding:
+                                        "6px 12px",
+
+                                    margin:
+                                        "4px",
+
+                                    borderRadius:
+                                        "20px",
+
+                                    background:
+                                        "#eef2ff",
+
+                                    color:
+                                        "#4f46e5",
+
+                                    fontSize:
+                                        "13px",
+
+                                    fontWeight:
+                                        "600"
+                                }}
+                            >
+                                {section}
+                            </span>
+                        )
+                    )}
+
+                </div>
+            )}
+
+            <hr />
+
+            {/* =========================
                 Add / Edit Form
             ========================= */}
 
@@ -489,9 +647,72 @@ function AddQuestions() {
                 }
             >
 
-                {/* Question */}
+                {/* =========================
+                    Section
+                ========================= */}
 
                 <div>
+
+                    <label>
+                        Section
+                    </label>
+
+                    <br />
+
+                    <input
+                        type="text"
+                        name="section"
+                        value={
+                            formData.section
+                        }
+                        onChange={
+                            handleChange
+                        }
+                        placeholder="Example: Aptitude"
+                        list="section-options"
+                        required
+                    />
+
+                    <datalist
+                        id="section-options"
+                    >
+                        {sections.map(
+                            (section) => (
+                                <option
+                                    key={
+                                        section
+                                    }
+                                    value={
+                                        section
+                                    }
+                                />
+                            )
+                        )}
+                    </datalist>
+
+                    <p
+                        style={{
+                            color:
+                                "#64748b",
+                            fontSize:
+                                "13px"
+                        }}
+                    >
+                        Example: Aptitude,
+                        Technical,
+                        Programming
+                    </p>
+
+                </div>
+
+                <br />
+
+                {/* =========================
+                    Question
+                ========================= */}
+
+                <div>
+
                     <label>
                         Question
                     </label>
@@ -510,13 +731,17 @@ function AddQuestions() {
                         rows="4"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Option 1 */}
+                {/* =========================
+                    Option 1
+                ========================= */}
 
                 <div>
+
                     <label>
                         Option 1
                     </label>
@@ -535,13 +760,17 @@ function AddQuestions() {
                         placeholder="Enter option 1"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Option 2 */}
+                {/* =========================
+                    Option 2
+                ========================= */}
 
                 <div>
+
                     <label>
                         Option 2
                     </label>
@@ -560,13 +789,17 @@ function AddQuestions() {
                         placeholder="Enter option 2"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Option 3 */}
+                {/* =========================
+                    Option 3
+                ========================= */}
 
                 <div>
+
                     <label>
                         Option 3
                     </label>
@@ -585,13 +818,17 @@ function AddQuestions() {
                         placeholder="Enter option 3"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Option 4 */}
+                {/* =========================
+                    Option 4
+                ========================= */}
 
                 <div>
+
                     <label>
                         Option 4
                     </label>
@@ -610,13 +847,17 @@ function AddQuestions() {
                         placeholder="Enter option 4"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Correct Answer */}
+                {/* =========================
+                    Correct Answer
+                ========================= */}
 
                 <div>
+
                     <label>
                         Correct Answer
                     </label>
@@ -633,6 +874,7 @@ function AddQuestions() {
                         }
                         required
                     >
+
                         <option value="">
                             Select correct answer
                         </option>
@@ -672,14 +914,19 @@ function AddQuestions() {
                             {formData.option4 ||
                                 "Option 4"}
                         </option>
+
                     </select>
+
                 </div>
 
                 <br />
 
-                {/* Marks */}
+                {/* =========================
+                    Marks
+                ========================= */}
 
                 <div>
+
                     <label>
                         Marks
                     </label>
@@ -698,11 +945,14 @@ function AddQuestions() {
                         min="1"
                         required
                     />
+
                 </div>
 
                 <br />
 
-                {/* Submit */}
+                {/* =========================
+                    Submit
+                ========================= */}
 
                 <button
                     type="submit"

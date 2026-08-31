@@ -12,7 +12,8 @@ const updateExamTotalMarks = async (examId) => {
 
     const totalMarks = questions.reduce(
         (total, question) =>
-            total + Number(question.marks || 0),
+            total +
+            Number(question.marks || 0),
         0
     );
 
@@ -35,15 +36,20 @@ const createQuestion = async (req, res) => {
     try {
         const {
             examId,
+            section,
             question,
             options,
             correctAnswer,
             marks
         } = req.body;
 
-        // Check required fields
+        // =========================
+        // Required fields
+        // =========================
+
         if (
             !examId ||
+            !section ||
             !question ||
             !options ||
             !correctAnswer ||
@@ -55,7 +61,24 @@ const createQuestion = async (req, res) => {
             });
         }
 
-        // Check options
+        // =========================
+        // Section validation
+        // =========================
+
+        if (
+            typeof section !== "string" ||
+            section.trim().length === 0
+        ) {
+            return res.status(400).json({
+                message:
+                    "Section name is required"
+            });
+        }
+
+        // =========================
+        // Options validation
+        // =========================
+
         if (
             !Array.isArray(options) ||
             options.length !== 4
@@ -66,7 +89,23 @@ const createQuestion = async (req, res) => {
             });
         }
 
+        // Check empty options
+        if (
+            options.some(
+                (option) =>
+                    !String(option).trim()
+            )
+        ) {
+            return res.status(400).json({
+                message:
+                    "All options are required"
+            });
+        }
+
+        // =========================
         // Find exam
+        // =========================
+
         const exam =
             await Exam.findById(examId);
 
@@ -77,7 +116,10 @@ const createQuestion = async (req, res) => {
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -88,7 +130,10 @@ const createQuestion = async (req, res) => {
             });
         }
 
-        // Check correct answer
+        // =========================
+        // Correct answer
+        // =========================
+
         if (
             !options.includes(correctAnswer)
         ) {
@@ -98,25 +143,47 @@ const createQuestion = async (req, res) => {
             });
         }
 
+        // =========================
+        // Marks
+        // =========================
+
+        if (Number(marks) <= 0) {
+            return res.status(400).json({
+                message:
+                    "Marks must be greater than 0"
+            });
+        }
+
+        // =========================
         // Create question
+        // =========================
+
         const newQuestion =
             await Question.create({
                 exam: examId,
-                question,
+                section: section.trim(),
+                question: question.trim(),
                 options,
                 correctAnswer,
-                marks
+                marks: Number(marks)
             });
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            examId
-        );
+        // =========================
+        // Update total marks
+        // =========================
+
+        const totalMarks =
+            await updateExamTotalMarks(
+                examId
+            );
 
         res.status(201).json({
             message:
                 "Question created successfully",
-            question: newQuestion
+
+            question: newQuestion,
+
+            totalMarks
         });
 
     } catch (error) {
@@ -141,9 +208,13 @@ const getQuestionsByExam = async (
     res
 ) => {
     try {
-        const { examId } = req.params;
+        const { examId } =
+            req.params;
 
+        // =========================
         // Find exam
+        // =========================
+
         const exam =
             await Exam.findById(examId);
 
@@ -154,7 +225,10 @@ const getQuestionsByExam = async (
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -165,7 +239,10 @@ const getQuestionsByExam = async (
             });
         }
 
+        // =========================
         // Get questions
+        // =========================
+
         const questions =
             await Question.find({
                 exam: examId
@@ -203,13 +280,17 @@ const updateQuestion = async (
             req.params;
 
         const {
+            section,
             question,
             options,
             correctAnswer,
             marks
         } = req.body;
 
+        // =========================
         // Find question
+        // =========================
+
         const existingQuestion =
             await Question.findById(
                 questionId
@@ -222,7 +303,10 @@ const updateQuestion = async (
             });
         }
 
+        // =========================
         // Find exam
+        // =========================
+
         const exam =
             await Exam.findById(
                 existingQuestion.exam
@@ -235,7 +319,10 @@ const updateQuestion = async (
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -246,8 +333,12 @@ const updateQuestion = async (
             });
         }
 
-        // Check required fields
+        // =========================
+        // Required fields
+        // =========================
+
         if (
+            !section ||
             !question ||
             !options ||
             !correctAnswer ||
@@ -259,7 +350,24 @@ const updateQuestion = async (
             });
         }
 
-        // Check options
+        // =========================
+        // Section validation
+        // =========================
+
+        if (
+            typeof section !== "string" ||
+            section.trim().length === 0
+        ) {
+            return res.status(400).json({
+                message:
+                    "Section name is required"
+            });
+        }
+
+        // =========================
+        // Options validation
+        // =========================
+
         if (
             !Array.isArray(options) ||
             options.length !== 4
@@ -270,7 +378,23 @@ const updateQuestion = async (
             });
         }
 
-        // Check correct answer
+        // Check empty options
+        if (
+            options.some(
+                (option) =>
+                    !String(option).trim()
+            )
+        ) {
+            return res.status(400).json({
+                message:
+                    "All options are required"
+            });
+        }
+
+        // =========================
+        // Correct answer
+        // =========================
+
         if (
             !options.includes(
                 correctAnswer
@@ -282,7 +406,10 @@ const updateQuestion = async (
             });
         }
 
-        // Check marks
+        // =========================
+        // Marks
+        // =========================
+
         if (Number(marks) <= 0) {
             return res.status(400).json({
                 message:
@@ -290,9 +417,15 @@ const updateQuestion = async (
             });
         }
 
+        // =========================
         // Update question
+        // =========================
+
+        existingQuestion.section =
+            section.trim();
+
         existingQuestion.question =
-            question;
+            question.trim();
 
         existingQuestion.options =
             options;
@@ -305,16 +438,23 @@ const updateQuestion = async (
 
         await existingQuestion.save();
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            existingQuestion.exam
-        );
+        // =========================
+        // Update total marks
+        // =========================
+
+        const totalMarks =
+            await updateExamTotalMarks(
+                existingQuestion.exam
+            );
 
         res.status(200).json({
             message:
                 "Question updated successfully",
+
             question:
-                existingQuestion
+                existingQuestion,
+
+            totalMarks
         });
 
     } catch (error) {
@@ -342,7 +482,10 @@ const deleteQuestion = async (
         const { questionId } =
             req.params;
 
+        // =========================
         // Find question
+        // =========================
+
         const question =
             await Question.findById(
                 questionId
@@ -355,7 +498,10 @@ const deleteQuestion = async (
             });
         }
 
+        // =========================
         // Find exam
+        // =========================
+
         const exam =
             await Exam.findById(
                 question.exam
@@ -368,7 +514,10 @@ const deleteQuestion = async (
             });
         }
 
-        // Check ownership
+        // =========================
+        // Ownership
+        // =========================
+
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -379,19 +528,28 @@ const deleteQuestion = async (
             });
         }
 
-        // Delete question
+        // =========================
+        // Delete
+        // =========================
+
         await Question.findByIdAndDelete(
             questionId
         );
 
-        // Update exam total marks
-        await updateExamTotalMarks(
-            question.exam
-        );
+        // =========================
+        // Update total marks
+        // =========================
+
+        const totalMarks =
+            await updateExamTotalMarks(
+                question.exam
+            );
 
         res.status(200).json({
             message:
-                "Question deleted successfully"
+                "Question deleted successfully",
+
+            totalMarks
         });
 
     } catch (error) {
@@ -416,9 +574,13 @@ const getStudentQuestions = async (
     res
 ) => {
     try {
-        const { examId } = req.params;
+        const { examId } =
+            req.params;
 
+        // =========================
         // Find exam
+        // =========================
+
         const exam =
             await Exam.findById(examId);
 
@@ -429,7 +591,10 @@ const getStudentQuestions = async (
             });
         }
 
-        // Only published exams
+        // =========================
+        // Published only
+        // =========================
+
         if (
             exam.status !== "published"
         ) {
@@ -446,26 +611,26 @@ const getStudentQuestions = async (
         const now = new Date();
 
         if (
-            now < new Date(
-                exam.startDate
-            )
+            now <
+            new Date(exam.startDate)
         ) {
             return res.status(403).json({
                 message:
                     "This exam has not started yet",
+
                 startDate:
                     exam.startDate
             });
         }
 
         if (
-            now > new Date(
-                exam.endDate
-            )
+            now >
+            new Date(exam.endDate)
         ) {
             return res.status(403).json({
                 message:
                     "This exam has ended",
+
                 endDate:
                     exam.endDate
             });
@@ -475,9 +640,8 @@ const getStudentQuestions = async (
         // Get questions
         // =========================
 
-        // IMPORTANT:
-        // correctAnswer is NOT
-        // sent to student
+        // correctAnswer is NOT sent
+        // to students
 
         const questions =
             await Question.find({
@@ -493,15 +657,22 @@ const getStudentQuestions = async (
         res.status(200).json({
             exam: {
                 id: exam._id,
-                title: exam.title,
+
+                title:
+                    exam.title,
+
                 description:
                     exam.description,
+
                 duration:
                     exam.duration,
+
                 totalMarks:
                     exam.totalMarks,
+
                 startDate:
                     exam.startDate,
+
                 endDate:
                     exam.endDate
             },
