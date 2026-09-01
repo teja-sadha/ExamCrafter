@@ -9,50 +9,27 @@ function StudentDashboard() {
 
     const [exams, setExams] = useState([]);
     const [results, setResults] = useState([]);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
-    // =========================
-    // Fetch Dashboard Data
-    // =========================
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [
-                    examsResponse,
-                    resultsResponse
-                ] = await Promise.all([
+                const [examsResponse, resultsResponse] = await Promise.all([
                     api.get("/exams/published"),
                     api.get("/results")
                 ]);
 
-                setExams(
-                    examsResponse.data.exams || []
-                );
-
-                setResults(
-                    resultsResponse.data.results || []
-                );
-
+                setExams(examsResponse.data.exams || []);
+                setResults(resultsResponse.data.results || []);
             } catch (error) {
-                console.error(
-                    "Dashboard error:",
-                    error
-                );
+                console.error("Dashboard error:", error);
 
                 if (error.response) {
-                    setError(
-                        error.response.data.message ||
-                        "Failed to load dashboard"
-                    );
+                    setError(error.response.data.message || "Failed to load dashboard");
                 } else {
-                    setError(
-                        "Unable to connect to server"
-                    );
+                    setError("Unable to connect to server");
                 }
-
             } finally {
                 setLoading(false);
             }
@@ -61,35 +38,15 @@ function StudentDashboard() {
         fetchDashboardData();
     }, []);
 
-    // =========================
-    // Statistics
-    // =========================
-
-    const completedExams =
-        results.length;
-
-    const availableExams =
-        exams.filter(
-            (exam) => !exam.hasSubmitted
-        ).length;
-
+    const completedExams = results.length;
+    const upcomingExams = exams.filter((exam) => new Date(exam.startDate) > new Date()).length;
+    const availableExams = exams.filter((exam) => !exam.hasSubmitted).length;
     const averagePercentage =
         completedExams > 0
-            ? (
-                  results.reduce(
-                      (total, result) =>
-                          total +
-                          Number(
-                              result.percentage || 0
-                          ),
-                      0
-                  ) / completedExams
-              ).toFixed(2)
+            ? (results.reduce((total, result) => total + Number(result.percentage || 0), 0) / completedExams).toFixed(2)
             : "0.00";
 
-    // =========================
-    // Loading
-    // =========================
+    const recentResults = results.slice(0, 3);
 
     if (loading) {
         return (
@@ -97,28 +54,19 @@ function StudentDashboard() {
                 <div className="dashboard-container">
                     <div className="dashboard-loading">
                         <div className="loading-spinner"></div>
-                        <p>
-                            Loading your dashboard...
-                        </p>
+                        <p>Loading your dashboard...</p>
                     </div>
                 </div>
             </div>
         );
     }
 
-    // =========================
-    // Error
-    // =========================
-
     if (error) {
         return (
             <div className="dashboard-page">
                 <div className="dashboard-container">
                     <div className="dashboard-error">
-                        <h2>
-                            Something went wrong
-                        </h2>
-
+                        <h2>Something went wrong</h2>
                         <p>{error}</p>
                     </div>
                 </div>
@@ -126,38 +74,17 @@ function StudentDashboard() {
         );
     }
 
-    // =========================
-    // Dashboard
-    // =========================
-
     return (
         <div className="dashboard-page">
-
             <div className="dashboard-container">
-
-                {/* =========================
-                    Welcome
-                ========================= */}
-
                 <section className="welcome-section">
-
                     <div>
-                        <p className="welcome-label">
-                            Student Dashboard
-                        </p>
-
+                        <p className="welcome-label">Student Dashboard</p>
                         <h1>
-                            Welcome back,{" "}
-                            <span>
-                                {user?.name}
-                            </span>
-                            👋
+                            Welcome back, <span>{user?.name}</span> 👋
                         </h1>
-
                         <p className="welcome-text">
-                            Keep learning, take
-                            exams and track your
-                            progress.
+                            Access your assigned exams, track upcoming assessments, and review your results.
                         </p>
                     </div>
 
@@ -165,285 +92,96 @@ function StudentDashboard() {
                         <span>●</span>
                         Student
                     </div>
-
                 </section>
-
-                {/* =========================
-                    Statistics
-                ========================= */}
 
                 <section className="stats-grid">
-
                     <div className="stat-card">
-
-                        <div className="stat-icon">
-                            📝
-                        </div>
-
+                        <div className="stat-icon">📝</div>
                         <div>
-                            <p>
-                                Available Exams
-                            </p>
-
-                            <h2>
-                                {availableExams}
-                            </h2>
+                            <p>Available Exams</p>
+                            <h2>{availableExams}</h2>
                         </div>
-
                     </div>
 
                     <div className="stat-card">
-
-                        <div className="stat-icon">
-                            ✓
-                        </div>
-
+                        <div className="stat-icon">✓</div>
                         <div>
-                            <p>
-                                Completed Exams
-                            </p>
-
-                            <h2>
-                                {completedExams}
-                            </h2>
+                            <p>Completed Exams</p>
+                            <h2>{completedExams}</h2>
                         </div>
-
                     </div>
 
                     <div className="stat-card">
-
-                        <div className="stat-icon">
-                            %
-                        </div>
-
+                        <div className="stat-icon">🗓️</div>
                         <div>
-                            <p>
-                                Average Score
-                            </p>
-
-                            <h2>
-                                {averagePercentage}%
-                            </h2>
+                            <p>Upcoming Exams</p>
+                            <h2>{upcomingExams}</h2>
                         </div>
-
                     </div>
 
+                    <div className="stat-card">
+                        <div className="stat-icon">%</div>
+                        <div>
+                            <p>Average Score</p>
+                            <h2>{averagePercentage}%</h2>
+                        </div>
+                    </div>
                 </section>
 
-                {/* =========================
-                    Quick Actions
-                ========================= */}
-
                 <section className="quick-actions">
-
                     <div className="section-heading">
                         <div>
-                            <h2>
-                                Quick Actions
-                            </h2>
-
-                            <p>
-                                Continue where you
-                                left off
-                            </p>
+                            <h2>Quick Actions</h2>
+                            <p>Continue with your assessments</p>
                         </div>
                     </div>
 
                     <div className="action-grid">
-
-                        <Link
-                            to="/student/exams"
-                            className="action-card"
-                        >
-                            <div className="action-icon">
-                                🚀
-                            </div>
-
+                        <Link to="/student/exams" className="action-card">
+                            <div className="action-icon">🚀</div>
                             <div>
-                                <h3>
-                                    Browse Exams
-                                </h3>
-
-                                <p>
-                                    Find available
-                                    exams and start
-                                    testing your
-                                    skills.
-                                </p>
+                                <h3>Browse Exams</h3>
+                                <p>See all assigned and published assessments</p>
                             </div>
-
-                            <span className="action-arrow">
-                                →
-                            </span>
                         </Link>
 
-                        <Link
-                            to="/student/results"
-                            className="action-card"
-                        >
-                            <div className="action-icon">
-                                📊
-                            </div>
-
+                        <Link to="/student/results" className="action-card">
+                            <div className="action-icon">📊</div>
                             <div>
-                                <h3>
-                                    My Results
-                                </h3>
-
-                                <p>
-                                    Review your exam
-                                    scores and
-                                    performance.
-                                </p>
+                                <h3>View Results</h3>
+                                <p>Check your grades and evaluation history</p>
                             </div>
-
-                            <span className="action-arrow">
-                                →
-                            </span>
                         </Link>
-
                     </div>
-
                 </section>
 
-                {/* =========================
-                    Recent Results
-                ========================= */}
-
-                <section className="recent-section">
-
+                <section className="results-panel">
                     <div className="section-heading">
-
                         <div>
-                            <h2>
-                                Recent Results
-                            </h2>
-
-                            <p>
-                                Your latest exam
-                                performance
-                            </p>
+                            <h2>Recent Results</h2>
+                            <p>Your latest performance</p>
                         </div>
-
-                        {results.length > 0 && (
-                            <Link
-                                to="/student/results"
-                                className="view-all-link"
-                            >
-                                View all →
-                            </Link>
-                        )}
-
                     </div>
 
-                    {results.length === 0 ? (
-                        <div className="empty-card">
-
-                            <div className="empty-icon">
-                                📚
-                            </div>
-
-                            <h3>
-                                No exams completed yet
-                            </h3>
-
-                            <p>
-                                Take your first exam
-                                to see your results
-                                here.
-                            </p>
-
-                            <Link
-                                to="/student/exams"
-                                className="primary-link"
-                            >
-                                Explore Exams
-                            </Link>
-
+                    {recentResults.length === 0 ? (
+                        <div className="panel-empty-state">
+                            <p>No results available yet. Complete your first exam to see performance here.</p>
                         </div>
                     ) : (
-                        <div className="results-list">
-
-                            {results
-                                .slice(0, 5)
-                                .map((result) => (
-                                    <div
-                                        key={
-                                            result._id
-                                        }
-                                        className="result-card"
-                                    >
-
-                                        <div className="result-main">
-
-                                            <div className="result-icon">
-                                                ✓
-                                            </div>
-
-                                            <div>
-                                                <h3>
-                                                    {result.exam
-                                                        ?.title ||
-                                                        "Exam"}
-                                                </h3>
-
-                                                <p>
-                                                    {new Date(
-                                                        result.submittedAt
-                                                    ).toLocaleDateString(
-                                                        undefined,
-                                                        {
-                                                            year:
-                                                                "numeric",
-                                                            month:
-                                                                "short",
-                                                            day:
-                                                                "numeric"
-                                                        }
-                                                    )}
-                                                </p>
-                                            </div>
-
-                                        </div>
-
-                                        <div className="result-score">
-
-                                            <strong>
-                                                {Number(
-                                                    result.percentage
-                                                ).toFixed(
-                                                    2
-                                                )}
-                                                %
-                                            </strong>
-
-                                            <span>
-                                                {result.score}{" "}
-                                                /{" "}
-                                                {
-                                                    result.totalMarks
-                                                }
-                                            </span>
-
-                                        </div>
-
-                                        <Link
-                                            to={`/student/results/${result.exam?._id}`}
-                                            className="result-link"
-                                        >
-                                            View →
-                                        </Link>
-
+                        <div className="result-list">
+                            {recentResults.map((result) => (
+                                <div key={result._id} className="result-row">
+                                    <div>
+                                        <strong>{result.exam?.title || "Exam"}</strong>
+                                        <small>{new Date(result.createdAt).toLocaleString()}</small>
                                     </div>
-                                ))}
-
+                                    <span className="score-pill">{result.percentage || 0}%</span>
+                                </div>
+                            ))}
                         </div>
                     )}
-
                 </section>
-
             </div>
-
         </div>
     );
 }

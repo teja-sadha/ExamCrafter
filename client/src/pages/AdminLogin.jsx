@@ -30,7 +30,6 @@ function AdminLogin() {
 
         try {
             setLoading(true);
-
             const response = await api.post("/auth/login", {
                 email: formData.email,
                 password: formData.password,
@@ -62,11 +61,11 @@ function AdminLogin() {
                         alt="ExamCrafter"
                         className="auth-logo-image"
                     />
-                    <p>Smart online exams, simplified.</p>
+                    <p>Manage exams, questions, student assignment, and evaluation from one secure admin portal.</p>
                     <div className="auth-features">
-                        <div><span>✓</span> Secure online exams</div>
-                        <div><span>✓</span> Instant results</div>
-                        <div><span>✓</span> Smart exam management</div>
+                        <div><span>✓</span> Create and publish exams</div>
+                        <div><span>✓</span> Assign student access</div>
+                        <div><span>✓</span> View results and submissions</div>
                     </div>
                 </div>
             </div>
@@ -75,7 +74,7 @@ function AdminLogin() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <h2>Admin Login</h2>
-                        <p>Access your exam dashboard</p>
+                        <p>Manage exams, questions and student access</p>
                     </div>
 
                     {error && <div className="auth-error">{error}</div>}
@@ -108,14 +107,14 @@ function AdminLogin() {
                         </div>
 
                         <button type="submit" className="auth-button" disabled={loading}>
-                            {loading ? "Logging in..." : "Login"}
+                            {loading ? "Logging in..." : "Login as Admin"}
                         </button>
                     </form>
 
                     <div className="auth-footer">
                         <span>New admin?</span>
                         <Link to="/admin/register" className="auth-link-button">
-                            Admin Register
+                            Admin Registration
                         </Link>
                     </div>
 

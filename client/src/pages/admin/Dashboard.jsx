@@ -2,56 +2,34 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
+import "../../styles/dashboard.css";
 
 function AdminDashboard() {
     const { user } = useAuth();
 
     const [exams, setExams] = useState([]);
     const [results, setResults] = useState([]);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
-    // =========================
-    // Fetch Dashboard Data
-    // =========================
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [
-                    examsResponse,
-                    resultsResponse
-                ] = await Promise.all([
+                const [examsResponse, resultsResponse] = await Promise.all([
                     api.get("/exams"),
                     api.get("/results/admin")
                 ]);
 
-                setExams(
-                    examsResponse.data.exams || []
-                );
-
-                setResults(
-                    resultsResponse.data.results || []
-                );
-
+                setExams(examsResponse.data.exams || []);
+                setResults(resultsResponse.data.results || []);
             } catch (error) {
-                console.error(
-                    "Admin dashboard error:",
-                    error
-                );
+                console.error("Admin dashboard error:", error);
 
                 if (error.response) {
-                    setError(
-                        error.response.data.message ||
-                        "Failed to load dashboard"
-                    );
+                    setError(error.response.data.message || "Failed to load dashboard");
                 } else {
-                    setError(
-                        "Unable to connect to server"
-                    );
+                    setError("Unable to connect to server");
                 }
-
             } finally {
                 setLoading(false);
             }
@@ -60,260 +38,154 @@ function AdminDashboard() {
         fetchDashboardData();
     }, []);
 
-    // =========================
-    // Statistics
-    // =========================
-
     const totalExams = exams.length;
-
-    const publishedExams =
-        exams.filter(
-            (exam) =>
-                exam.status === "published"
-        ).length;
-
-    const draftExams =
-        exams.filter(
-            (exam) =>
-                exam.status === "draft"
-        ).length;
-
-    const totalSubmissions =
-        results.length;
-
-    // =========================
-    // Loading
-    // =========================
+    const publishedExams = exams.filter((exam) => exam.status === "published").length;
+    const draftExams = exams.filter((exam) => exam.status === "draft").length;
+    const totalQuestions = exams.reduce((sum, exam) => sum + Number(exam.questionCount || 0), 0);
+    const totalSubmissions = results.length;
 
     if (loading) {
         return (
-            <div>
-                <h1>
-                    Admin Dashboard
-                </h1>
-
-                <p>
-                    Loading dashboard...
-                </p>
+            <div className="dashboard-page">
+                <div className="dashboard-container">
+                    <div className="dashboard-loading">
+                        <div className="loading-spinner"></div>
+                        <p>Loading dashboard...</p>
+                    </div>
+                </div>
             </div>
         );
     }
-
-    // =========================
-    // Error
-    // =========================
 
     if (error) {
         return (
-            <div>
-                <h1>
-                    Admin Dashboard
-                </h1>
-
-                <p
-                    style={{
-                        color: "red"
-                    }}
-                >
-                    {error}
-                </p>
+            <div className="dashboard-page">
+                <div className="dashboard-container">
+                    <div className="dashboard-error">
+                        <h2>Admin Dashboard</h2>
+                        <p>{error}</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    // =========================
-    // Dashboard
-    // =========================
-
     return (
-        <div>
+        <div className="dashboard-page">
+            <div className="dashboard-container">
+                <section className="welcome-section">
+                    <div>
+                        <p className="welcome-label">Admin Dashboard</p>
+                        <h1>
+                            Manage your exams, <span>{user?.name}</span>
+                        </h1>
+                        <p className="welcome-text">
+                            Create assessments, manage question banks, assign student access, and review performance.
+                        </p>
+                    </div>
 
-            <h1>
-                Admin Dashboard
-            </h1>
+                    <div className="welcome-badge">
+                        <span>●</span>
+                        Admin
+                    </div>
+                </section>
 
-            <h2>
-                Welcome, {user?.name}
-            </h2>
+                <section className="stats-grid">
+                    <div className="stat-card">
+                        <div className="stat-icon">📘</div>
+                        <div>
+                            <p>Total Exams</p>
+                            <h2>{totalExams}</h2>
+                        </div>
+                    </div>
 
-            <p>
-                Email: {user?.email}
-            </p>
+                    <div className="stat-card">
+                        <div className="stat-icon">✅</div>
+                        <div>
+                            <p>Published Exams</p>
+                            <h2>{publishedExams}</h2>
+                        </div>
+                    </div>
 
-            <p>
-                Role: {user?.role}
-            </p>
+                    <div className="stat-card">
+                        <div className="stat-icon">📝</div>
+                        <div>
+                            <p>Draft Exams</p>
+                            <h2>{draftExams}</h2>
+                        </div>
+                    </div>
 
-            <hr />
+                    <div className="stat-card">
+                        <div className="stat-icon">❓</div>
+                        <div>
+                            <p>Total Questions</p>
+                            <h2>{totalQuestions}</h2>
+                        </div>
+                    </div>
+                </section>
 
-            {/* =========================
-                Statistics
-            ========================= */}
+                <section className="quick-actions">
+                    <div className="section-heading">
+                        <div>
+                            <h2>Quick Actions</h2>
+                            <p>Manage evaluation workflow</p>
+                        </div>
+                    </div>
 
-            <h2>
-                Exam Statistics
-            </h2>
+                    <div className="action-grid">
+                        <Link to="/admin/exams/create" className="action-card">
+                            <div className="action-icon">＋</div>
+                            <div>
+                                <h3>Create Exam</h3>
+                                <p>Design new exam schedules, duration, and assigned students</p>
+                            </div>
+                        </Link>
 
-            <div
-                style={{
-                    display: "flex",
-                    gap: "20px",
-                    flexWrap: "wrap"
-                }}
-            >
+                        <Link to="/admin/exams" className="action-card">
+                            <div className="action-icon">📚</div>
+                            <div>
+                                <h3>Manage Exams</h3>
+                                <p>Update exam details, statuses, and question banks</p>
+                            </div>
+                        </Link>
 
-                {/* Total Exams */}
+                        <Link to="/admin/results" className="action-card">
+                            <div className="action-icon">📊</div>
+                            <div>
+                                <h3>View Results</h3>
+                                <p>Track exam submissions and overall student performance</p>
+                            </div>
+                        </Link>
 
-                <div
-                    style={{
-                        border:
-                            "1px solid #ccc",
-                        padding: "20px",
-                        borderRadius:
-                            "8px",
-                        minWidth:
-                            "180px"
-                    }}
-                >
-                    <h3>
-                        Total Exams
-                    </h3>
+                        <Link to="/admin/create-admin" className="action-card">
+                            <div className="action-icon">👥</div>
+                            <div>
+                                <h3>Create Admin</h3>
+                                <p>Manage additional admin and teacher accounts</p>
+                            </div>
+                        </Link>
+                    </div>
+                </section>
 
-                    <p
-                        style={{
-                            fontSize:
-                                "30px",
-                            fontWeight:
-                                "bold"
-                        }}
-                    >
-                        {totalExams}
-                    </p>
-                </div>
+                <section className="results-panel">
+                    <div className="section-heading">
+                        <div>
+                            <h2>Submission Summary</h2>
+                            <p>Live activity across your assessments</p>
+                        </div>
+                    </div>
 
-                {/* Published Exams */}
-
-                <div
-                    style={{
-                        border:
-                            "1px solid #ccc",
-                        padding: "20px",
-                        borderRadius:
-                            "8px",
-                        minWidth:
-                            "180px"
-                    }}
-                >
-                    <h3>
-                        Published Exams
-                    </h3>
-
-                    <p
-                        style={{
-                            fontSize:
-                                "30px",
-                            fontWeight:
-                                "bold"
-                        }}
-                    >
-                        {publishedExams}
-                    </p>
-                </div>
-
-                {/* Draft Exams */}
-
-                <div
-                    style={{
-                        border:
-                            "1px solid #ccc",
-                        padding: "20px",
-                        borderRadius:
-                            "8px",
-                        minWidth:
-                            "180px"
-                    }}
-                >
-                    <h3>
-                        Draft Exams
-                    </h3>
-
-                    <p
-                        style={{
-                            fontSize:
-                                "30px",
-                            fontWeight:
-                                "bold"
-                        }}
-                    >
-                        {draftExams}
-                    </p>
-                </div>
-
-                {/* Submissions */}
-
-                <div
-                    style={{
-                        border:
-                            "1px solid #ccc",
-                        padding: "20px",
-                        borderRadius:
-                            "8px",
-                        minWidth:
-                            "180px"
-                    }}
-                >
-                    <h3>
-                        Total Submissions
-                    </h3>
-
-                    <p
-                        style={{
-                            fontSize:
-                                "30px",
-                            fontWeight:
-                                "bold"
-                        }}
-                    >
-                        {totalSubmissions}
-                    </p>
-                </div>
-
+                    <div className="result-list">
+                        <div className="result-row">
+                            <div>
+                                <strong>Total submissions</strong>
+                                <small>Student attempts received</small>
+                            </div>
+                            <span className="score-pill">{totalSubmissions}</span>
+                        </div>
+                    </div>
+                </section>
             </div>
-
-            <br />
-
-            {/* =========================
-                Quick Links
-            ========================= */}
-
-            <h2>
-                Quick Actions
-            </h2>
-
-            <p>
-                <Link to="/admin/exams">
-                    Manage Exams
-                </Link>
-            </p>
-
-            <p>
-                <Link to="/admin/exams/create">
-                    Create New Exam
-                </Link>
-            </p>
-
-            <p>
-                <Link to="/admin/create-admin">
-                    Create Admin Account
-                </Link>
-            </p>
-
-            <p>
-                <Link to="/admin/results">
-                    View Results
-                </Link>
-            </p>
-
         </div>
     );
 }

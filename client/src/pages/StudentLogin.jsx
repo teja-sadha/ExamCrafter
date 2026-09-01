@@ -62,11 +62,11 @@ function StudentLogin() {
                         alt="ExamCrafter"
                         className="auth-logo-image"
                     />
-                    <p>Smart online exams, simplified.</p>
+                    <p>Access your assigned exams and track your results in one secure platform.</p>
                     <div className="auth-features">
-                        <div><span>✓</span> Secure online exams</div>
-                        <div><span>✓</span> Instant results</div>
-                        <div><span>✓</span> Smart exam management</div>
+                        <div><span>✓</span> Assigned exam access</div>
+                        <div><span>✓</span> Timed online assessments</div>
+                        <div><span>✓</span> View performance and results</div>
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@ function StudentLogin() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <h2>Student Login</h2>
-                        <p>Choose your student account</p>
+                        <p>Access your assigned exams and track your results</p>
                     </div>
 
                     {error && <div className="auth-error">{error}</div>}
@@ -108,14 +108,14 @@ function StudentLogin() {
                         </div>
 
                         <button type="submit" className="auth-button" disabled={loading}>
-                            {loading ? "Logging in..." : "Login"}
+                            {loading ? "Logging in..." : "Login as Student"}
                         </button>
                     </form>
 
                     <div className="auth-footer">
                         <span>Need an account?</span>
                         <button type="button" className="auth-link-button" onClick={() => navigate("/register")}>
-                            Student registration
+                            Student Registration
                         </button>
                     </div>
 

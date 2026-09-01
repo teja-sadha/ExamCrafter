@@ -91,11 +91,11 @@ function AdminRegister() {
                         alt="ExamCrafter"
                         className="auth-logo-image"
                     />
-                    <p>Create your admin account.</p>
+                    <p>Create a teacher or admin account to manage exams, questions, and student access.</p>
                     <div className="auth-features">
-                        <div><span>✓</span> Manage exams</div>
-                        <div><span>✓</span> Control student access</div>
-                        <div><span>✓</span> Track results</div>
+                        <div><span>✓</span> Create exams</div>
+                        <div><span>✓</span> Manage questions</div>
+                        <div><span>✓</span> Assign students</div>
                     </div>
                 </div>
             </div>
@@ -103,8 +103,8 @@ function AdminRegister() {
             <div className="auth-container">
                 <div className="auth-card">
                     <div className="auth-header">
-                        <h2>Admin Registration</h2>
-                        <p>Create your admin account</p>
+                        <h2>Admin / Teacher Registration</h2>
+                        <p>Create your account to manage assessments and results</p>
                     </div>
 
                     {error && <div className="auth-error">{error}</div>}

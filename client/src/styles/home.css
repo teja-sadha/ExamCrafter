@@ -124,6 +124,25 @@
     border-color: #c7d2fe;
 }
 
+.home-mini-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.home-text-link {
+    color: #6366f1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.home-text-link:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
 /* =========================
    Hero Visual
 ========================= */
@@ -390,6 +409,33 @@
     line-height: 1.7;
 }
 
+.home-audience {
+    width: min(1100px, 92%);
+    margin: 0 auto 60px;
+}
+
+.audience-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 14px;
+}
+
+.audience-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 84px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: white;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
 /* =========================
    CTA
 ========================= */
@@ -494,7 +540,8 @@
         margin-right: auto;
     }
 
-    .home-buttons {
+    .home-buttons,
+    .home-mini-actions {
         justify-content: center;
     }
 
@@ -506,6 +553,10 @@
         grid-template-columns: 1fr;
     }
 
+    .audience-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .home-cta {
         align-items: flex-start;
         flex-direction: column;
@@ -515,6 +566,10 @@
 @media (max-width: 500px) {
     .home-hero h1 {
         font-size: 38px;
+    }
+
+    .audience-grid {
+        grid-template-columns: 1fr;
     }
 
     .home-dashboard-card {
