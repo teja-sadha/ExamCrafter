@@ -71,7 +71,7 @@ const registerUser = async (req, res) => {
 };
 const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
         // Check required fields
         if (!email || !password) {
@@ -103,11 +103,22 @@ const loginUser = async (req, res) => {
             });
         }
 
+        const requestedRole = role
+            ? String(role).toLowerCase()
+            : user.role;
+
+        if (requestedRole !== user.role) {
+            return res.status(403).json({
+                message: `This login page is for ${user.role} accounts only.`
+            });
+        }
+
         // Create JWT
         const token = jwt.sign(
             {
                 userId: user._id,
-                role: user.role
+                role: user.role,
+                email: user.email
             },
             process.env.JWT_SECRET,
             {
@@ -160,6 +171,130 @@ const getMe = async (req, res) => {
     }
 };
 
+const createAdminUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                message: "Please provide name, email and password"
+            });
+        }
+
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({
+                message: "Please provide a valid email"
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters"
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                message: "User with this email already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const adminUser = await User.create({
+            name,
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: "admin"
+        });
+
+        res.status(201).json({
+            message: "Admin account created successfully",
+            user: {
+                id: adminUser._id,
+                name: adminUser.name,
+                email: adminUser.email,
+                role: adminUser.role
+            }
+        });
+
+    } catch (error) {
+        console.error("Create admin error:", error.message);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+};
+
+const registerAdmin = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                message: "Please provide name, email and password"
+            });
+        }
+
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({
+                message: "Please provide a valid email"
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters"
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                message: "User with this email already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newAdmin = await User.create({
+            name,
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: "admin"
+        });
+
+        res.status(201).json({
+            message: "Admin registration successful",
+            user: {
+                id: newAdmin._id,
+                name: newAdmin.name,
+                email: newAdmin.email,
+                role: newAdmin.role
+            }
+        });
+
+    } catch (error) {
+        console.error("Admin registration error:", error.message);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+};
+
 const adminTest = (req, res) => {
     res.status(200).json({
         message: "Welcome Admin! You have access to this route.",
@@ -177,6 +312,8 @@ module.exports = {
     registerUser,
     loginUser,
     getMe,
+    createAdminUser,
+    registerAdmin,
     adminTest,
     studentTest
 };

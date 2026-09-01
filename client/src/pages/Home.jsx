@@ -13,7 +13,7 @@ function Home() {
 
                 <div className="home-hero-content">
                     <img
-    src="/images/examcrafter-logo.png"
+    src="/images/examcrafter-logo.png.jpeg"
     alt="ExamCrafter"
     className="home-logo"
 />
@@ -46,10 +46,10 @@ function Home() {
                         </Link>
 
                         <Link
-                            to="/login"
+                            to="/student/login"
                             className="home-secondary-button"
                         >
-                            Login
+                            Student Login
                         </Link>
 
                     </div>

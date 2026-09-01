@@ -42,6 +42,11 @@ const examSchema = new mongoose.Schema(
             default: "draft"
         },
 
+        allowedStudents: {
+            type: [String],
+            default: []
+        },
+
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -52,5 +57,13 @@ const examSchema = new mongoose.Schema(
         timestamps: true
     }
 );
+
+examSchema.pre("save", function () {
+    if (Array.isArray(this.allowedStudents)) {
+        this.allowedStudents = this.allowedStudents
+            .map((email) => String(email).trim().toLowerCase())
+            .filter(Boolean);
+    }
+});
 
 module.exports = mongoose.model("Exam", examSchema);

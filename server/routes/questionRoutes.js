@@ -3,19 +3,10 @@ const express = require("express");
 const router = express.Router();
 
 const protect = require("../middleware/authMiddleware");
+const requireRole = require("../middleware/roleMiddleware");
 
 const questionController =
     require("../controllers/questionController");
-
-console.log(
-    "Question controller:",
-    questionController
-);
-
-console.log(
-    "Protect middleware type:",
-    typeof protect
-);
 
 // ==========================================
 // ADMIN - CREATE QUESTION
@@ -24,6 +15,7 @@ console.log(
 router.post(
     "/",
     protect,
+    requireRole("admin"),
     questionController.createQuestion
 );
 
@@ -34,6 +26,7 @@ router.post(
 router.get(
     "/exam/:examId",
     protect,
+    requireRole("admin"),
     questionController.getQuestionsByExam
 );
 
@@ -44,6 +37,7 @@ router.get(
 router.put(
     "/:questionId",
     protect,
+    requireRole("admin"),
     questionController.updateQuestion
 );
 
@@ -54,6 +48,7 @@ router.put(
 router.delete(
     "/:questionId",
     protect,
+    requireRole("admin"),
     questionController.deleteQuestion
 );
 
@@ -64,6 +59,7 @@ router.delete(
 router.get(
     "/student/:examId",
     protect,
+    requireRole("student"),
     questionController.getStudentQuestions
 );
 

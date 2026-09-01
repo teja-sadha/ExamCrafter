@@ -4,6 +4,8 @@ const {
     registerUser,
     loginUser,
     getMe,
+    createAdminUser,
+    registerAdmin,
     adminTest,
     studentTest
 } = require("../controllers/authController");
@@ -15,7 +17,16 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 
+router.post("/admin/register", registerAdmin);
+
 router.post("/login", loginUser);
+
+router.post(
+    "/admin/create",
+    protect,
+    requireRole("admin"),
+    createAdminUser
+);
 
 router.get("/me", protect, getMe);
 

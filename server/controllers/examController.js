@@ -1,6 +1,52 @@
+const validator = require("validator");
 const Exam = require("../models/Exam");
 const Question = require("../models/Question");
 const Result = require("../models/Result");
+const User = require("../models/User");
+
+const normalizeEmail = (email) =>
+    String(email || "").trim().toLowerCase();
+
+const normalizeAllowedStudents = (emails) => {
+    if (!Array.isArray(emails)) {
+        return [];
+    }
+
+    const seen = new Set();
+    const normalized = [];
+
+    for (const entry of emails) {
+        const value = normalizeEmail(entry);
+
+        if (!value) {
+            continue;
+        }
+
+        if (!validator.isEmail(value)) {
+            throw new Error(`Invalid email address: ${entry}`);
+        }
+
+        if (seen.has(value)) {
+            throw new Error(`Duplicate email address: ${value}`);
+        }
+
+        seen.add(value);
+        normalized.push(value);
+    }
+
+    return normalized;
+};
+
+const isStudentAllowedForExam = (exam, studentEmail) => {
+    if (!exam || !studentEmail) {
+        return false;
+    }
+
+    const normalizedStudentEmail = normalizeEmail(studentEmail);
+    const allowedEmails = (exam.allowedStudents || []).map(normalizeEmail);
+
+    return allowedEmails.includes(normalizedStudentEmail);
+};
 
 // ==========================================
 // ADMIN - CREATE EXAM
@@ -14,7 +60,8 @@ const createExam = async (req, res) => {
             duration,
             totalMarks,
             startDate,
-            endDate
+            endDate,
+            allowedStudents
         } = req.body;
 
         if (
@@ -40,6 +87,18 @@ const createExam = async (req, res) => {
             });
         }
 
+        let normalizedAllowedStudents = [];
+
+        try {
+            normalizedAllowedStudents = normalizeAllowedStudents(
+                allowedStudents || []
+            );
+        } catch (error) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
         const exam = await Exam.create({
             title,
             description,
@@ -47,6 +106,7 @@ const createExam = async (req, res) => {
             totalMarks,
             startDate,
             endDate,
+            allowedStudents: normalizedAllowedStudents,
             createdBy: req.user.userId
         });
 
@@ -67,7 +127,6 @@ const createExam = async (req, res) => {
         });
     }
 };
-
 
 // ==========================================
 // ADMIN - GET OWN EXAMS
@@ -97,10 +156,6 @@ const getAdminExams = async (req, res) => {
     }
 };
 
-
-// ==========================================
-// ADMIN - UPDATE EXAM
-// ==========================================
 // ==========================================
 // ADMIN - UPDATE EXAM
 // ==========================================
@@ -115,12 +170,9 @@ const updateExam = async (req, res) => {
             duration,
             startDate,
             endDate,
-            status
+            status,
+            allowedStudents
         } = req.body;
-
-        // =========================
-        // Validate required fields
-        // =========================
 
         if (
             !title ||
@@ -136,20 +188,12 @@ const updateExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Validate duration
-        // =========================
-
         if (Number(duration) <= 0) {
             return res.status(400).json({
                 message:
                     "Duration must be greater than 0"
             });
         }
-
-        // =========================
-        // Validate dates
-        // =========================
 
         if (
             new Date(endDate) <=
@@ -160,10 +204,6 @@ const updateExam = async (req, res) => {
                     "End date must be after start date"
             });
         }
-
-        // =========================
-        // Validate status
-        // =========================
 
         const allowedStatuses = [
             "draft",
@@ -179,9 +219,17 @@ const updateExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Find exam
-        // =========================
+        let normalizedAllowedStudents = [];
+
+        try {
+            normalizedAllowedStudents = normalizeAllowedStudents(
+                allowedStudents || []
+            );
+        } catch (error) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
 
         const exam = await Exam.findById(
             examId
@@ -193,10 +241,6 @@ const updateExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Check ownership
-        // =========================
-
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -207,13 +251,7 @@ const updateExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Check questions before
-        // publishing
-        // =========================
-
         if (status === "published") {
-
             const questionCount =
                 await Question.countDocuments({
                     exam: examId
@@ -227,22 +265,15 @@ const updateExam = async (req, res) => {
             }
         }
 
-        // =========================
-        // Update fields
-        // =========================
-
         exam.title = title;
         exam.description = description;
         exam.duration = Number(duration);
         exam.startDate = startDate;
         exam.endDate = endDate;
         exam.status = status;
+        exam.allowedStudents = normalizedAllowedStudents;
 
         await exam.save();
-
-        // =========================
-        // Response
-        // =========================
 
         res.status(200).json({
             message:
@@ -263,19 +294,12 @@ const updateExam = async (req, res) => {
 };
 
 // ==========================================
-// STUDENT - GET PUBLISHED EXAMS
-// ==========================================
-// ==========================================
 // ADMIN - DELETE EXAM
 // ==========================================
 
 const deleteExam = async (req, res) => {
     try {
         const { examId } = req.params;
-
-        // =========================
-        // Find exam
-        // =========================
 
         const exam = await Exam.findById(
             examId
@@ -287,10 +311,6 @@ const deleteExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Check ownership
-        // =========================
-
         if (
             exam.createdBy.toString() !==
             req.user.userId
@@ -301,17 +321,9 @@ const deleteExam = async (req, res) => {
             });
         }
 
-        // =========================
-        // Delete questions
-        // =========================
-
         await Question.deleteMany({
             exam: examId
         });
-
-        // =========================
-        // Delete exam
-        // =========================
 
         await Exam.findByIdAndDelete(
             examId
@@ -333,22 +345,35 @@ const deleteExam = async (req, res) => {
         });
     }
 };
+
 // ==========================================
 // STUDENT - GET PUBLISHED EXAMS
 // ==========================================
 
 const getPublishedExams = async (req, res) => {
     try {
+        let studentEmail = normalizeEmail(req.user.email);
+
+        if (!studentEmail) {
+            const user = await User.findById(req.user.userId).select("email");
+            studentEmail = normalizeEmail(user?.email);
+        }
+
+        const now = new Date();
+
         const exams = await Exam.find({
-            status: "published"
+            status: "published",
+            startDate: { $lte: now },
+            endDate: { $gte: now },
+            allowedStudents: {
+                $in: [studentEmail]
+            }
         })
             .select("-createdBy")
             .sort({
                 startDate: 1
             });
 
-        // Get all exams already submitted
-        // by the logged-in student
         const submittedResults =
             await Result.find({
                 student: req.user.userId
@@ -362,11 +387,9 @@ const getPublishedExams = async (req, res) => {
                 )
             );
 
-        // Add submission status
         const examsWithStatus =
             exams.map((exam) => ({
                 ...exam.toObject(),
-
                 hasSubmitted:
                     submittedExamIds.has(
                         exam._id.toString()
@@ -389,14 +412,15 @@ const getPublishedExams = async (req, res) => {
     }
 };
 
-// ==========================================
-// EXPORT
-// ==========================================
-
 module.exports = {
     createExam,
     getAdminExams,
     updateExam,
     deleteExam,
-    getPublishedExams
+    getPublishedExams,
+    normalizeAllowedStudents,
+    isStudentAllowedForExam
 };
+
+
+

@@ -303,6 +303,12 @@ function AdminDashboard() {
             </p>
 
             <p>
+                <Link to="/admin/create-admin">
+                    Create Admin Account
+                </Link>
+            </p>
+
+            <p>
                 <Link to="/admin/results">
                     View Results
                 </Link>

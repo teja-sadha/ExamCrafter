@@ -10,6 +10,7 @@ const {
 } = require("../controllers/resultController");
 
 const protect = require("../middleware/authMiddleware");
+const requireRole = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ const router = express.Router();
 router.post(
     "/exam/:examId",
     protect,
+    requireRole("student"),
     submitExam
 );
 
@@ -30,6 +32,7 @@ router.post(
 router.get(
     "/exam/:examId",
     protect,
+    requireRole("student"),
     getMyResult
 );
 
@@ -40,19 +43,24 @@ router.get(
 router.get(
     "/",
     protect,
+    requireRole("student"),
     getMyResults
 );
+
 router.get(
     "/admin",
     protect,
+    requireRole("admin"),
     getAllResults
 );
 
 router.get(
     "/admin/exam/:examId",
     protect,
+    requireRole("admin"),
     getResultsByExam
 );
+
 // ==========================================
 // ADMIN - GET ONE RESULT
 // ==========================================
@@ -60,6 +68,8 @@ router.get(
 router.get(
     "/admin/:resultId",
     protect,
+    requireRole("admin"),
     getAdminResultById
 );
+
 module.exports = router;

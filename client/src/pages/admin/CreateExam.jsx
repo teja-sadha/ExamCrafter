@@ -18,9 +18,11 @@ function CreateExam() {
         duration: "",
         totalMarks: "",
         startDate: "",
-        endDate: ""
+        endDate: "",
+        allowedStudents: []
     });
 
+    const [studentEmailInput, setStudentEmailInput] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
@@ -31,6 +33,43 @@ function CreateExam() {
         setFormData((previousData) => ({
             ...previousData,
             [name]: value
+        }));
+    };
+
+    const addStudentEmail = () => {
+        const trimmed = studentEmailInput.trim();
+
+        if (!trimmed) {
+            setError("Please enter a student email");
+            return;
+        }
+
+        const email = trimmed.toLowerCase();
+
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            setError("Please provide a valid email address");
+            return;
+        }
+
+        if (formData.allowedStudents.some((item) => item.toLowerCase() === email)) {
+            setError("This student email is already added");
+            return;
+        }
+
+        setFormData((previousData) => ({
+            ...previousData,
+            allowedStudents: [...previousData.allowedStudents, email]
+        }));
+        setStudentEmailInput("");
+        setError("");
+    };
+
+    const removeStudentEmail = (emailToRemove) => {
+        setFormData((previousData) => ({
+            ...previousData,
+            allowedStudents: previousData.allowedStudents.filter(
+                (email) => email !== emailToRemove
+            )
         }));
     };
 
@@ -76,8 +115,6 @@ function CreateExam() {
                     totalMarks:
                         Number(formData.totalMarks),
 
-                    // Convert local browser time
-                    // to UTC before sending
                     startDate:
                         toISOString(
                             formData.startDate
@@ -86,7 +123,10 @@ function CreateExam() {
                     endDate:
                         toISOString(
                             formData.endDate
-                        )
+                        ),
+
+                    allowedStudents:
+                        formData.allowedStudents
                 }
             );
 
@@ -250,6 +290,39 @@ function CreateExam() {
                         min="1"
                         required
                     />
+                </div>
+
+                <br />
+
+                <div>
+                    <label>
+                        Student Email Access
+                    </label>
+                    <br />
+                    <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                        <input
+                            type="email"
+                            value={studentEmailInput}
+                            onChange={(e) => setStudentEmailInput(e.target.value)}
+                            placeholder="student@gmail.com"
+                            style={{ flex: 1 }}
+                        />
+                        <button type="button" onClick={addStudentEmail}>Add</button>
+                    </div>
+                    <div style={{ marginTop: "12px" }}>
+                        {formData.allowedStudents.length === 0 ? (
+                            <p>No students assigned.</p>
+                        ) : (
+                            <ul>
+                                {formData.allowedStudents.map((email) => (
+                                    <li key={email} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                                        <span>{email}</span>
+                                        <button type="button" onClick={() => removeStudentEmail(email)}>Remove</button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </div>
 
                 <br />

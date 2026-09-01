@@ -71,9 +71,11 @@ function AdminExams() {
             duration: "",
             startDate: "",
             endDate: "",
-            status: "draft"
+            status: "draft",
+            allowedStudents: []
         });
 
+    const [studentEmailInput, setStudentEmailInput] = useState("");
     const [editLoading, setEditLoading] =
         useState(false);
 
@@ -239,8 +241,6 @@ function AdminExams() {
             duration:
                 exam.duration || "",
 
-            // Convert database date
-            // into browser local time
             startDate:
                 formatDateForInput(
                     exam.startDate
@@ -252,7 +252,12 @@ function AdminExams() {
                 ),
 
             status:
-                exam.status || "draft"
+                exam.status || "draft",
+
+            allowedStudents:
+                Array.isArray(exam.allowedStudents)
+                    ? exam.allowedStudents
+                    : []
         });
 
         window.scrollTo({
@@ -276,8 +281,47 @@ function AdminExams() {
             duration: "",
             startDate: "",
             endDate: "",
-            status: "draft"
+            status: "draft",
+            allowedStudents: []
         });
+        setStudentEmailInput("");
+    };
+
+    const addStudentEmail = () => {
+        const trimmed = studentEmailInput.trim();
+
+        if (!trimmed) {
+            setError("Please enter a student email");
+            return;
+        }
+
+        const email = trimmed.toLowerCase();
+
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            setError("Please provide a valid email address");
+            return;
+        }
+
+        if (editForm.allowedStudents.some((item) => item.toLowerCase() === email)) {
+            setError("This student email is already added");
+            return;
+        }
+
+        setEditForm((previousForm) => ({
+            ...previousForm,
+            allowedStudents: [...previousForm.allowedStudents, email]
+        }));
+        setStudentEmailInput("");
+        setError("");
+    };
+
+    const removeStudentEmail = (emailToRemove) => {
+        setEditForm((previousForm) => ({
+            ...previousForm,
+            allowedStudents: previousForm.allowedStudents.filter(
+                (email) => email !== emailToRemove
+            )
+        }));
     };
 
     // ==========================================
@@ -357,7 +401,10 @@ function AdminExams() {
                             ),
 
                         status:
-                            editForm.status
+                            editForm.status,
+
+                        allowedStudents:
+                            editForm.allowedStudents
                     }
                 );
 
@@ -726,6 +773,39 @@ function AdminExams() {
                                 required
                             />
 
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <label>
+                                Student Email Access
+                            </label>
+                            <br />
+                            <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                                <input
+                                    type="email"
+                                    value={studentEmailInput}
+                                    onChange={(e) => setStudentEmailInput(e.target.value)}
+                                    placeholder="student@gmail.com"
+                                    style={{ flex: 1 }}
+                                />
+                                <button type="button" onClick={addStudentEmail}>Add</button>
+                            </div>
+                            <div style={{ marginTop: "12px" }}>
+                                {editForm.allowedStudents.length === 0 ? (
+                                    <p>No students assigned.</p>
+                                ) : (
+                                    <ul>
+                                        {editForm.allowedStudents.map((email) => (
+                                            <li key={email} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                                                <span>{email}</span>
+                                                <button type="button" onClick={() => removeStudentEmail(email)}>Remove</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </div>
 
                         <br />

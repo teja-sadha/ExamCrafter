@@ -1,5 +1,7 @@
 const Question = require("../models/Question");
 const Exam = require("../models/Exam");
+const User = require("../models/User");
+const { isStudentAllowedForExam, normalizeAllowedStudents } = require("./examController");
 
 // ==========================================
 // UPDATE EXAM TOTAL MARKS
@@ -872,6 +874,25 @@ const getStudentQuestions = async (
 
                 endDate:
                     exam.endDate
+            });
+        }
+
+        let studentEmail = req.user.email;
+
+        if (!studentEmail) {
+            const user = await User.findById(req.user.userId).select("email");
+            studentEmail = user?.email;
+        }
+
+        if (
+            !isStudentAllowedForExam(
+                exam,
+                studentEmail
+            )
+        ) {
+            return res.status(403).json({
+                message:
+                    "You are not authorized to access this exam."
             });
         }
 

@@ -9,7 +9,7 @@ function ProtectedRoute({ children, role }) {
     }
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to={role === "admin" ? "/admin/login" : "/student/login"} replace />;
     }
 
     if (role && user.role !== role) {

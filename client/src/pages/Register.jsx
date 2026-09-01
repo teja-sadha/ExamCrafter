@@ -66,7 +66,7 @@ function Register() {
             });
 
             setTimeout(() => {
-                navigate("/login");
+                navigate("/student/login");
             }, 1500);
 
         } catch (error) {
@@ -302,10 +302,10 @@ function Register() {
                             type="button"
                             className="auth-link-button"
                             onClick={() =>
-                                navigate("/login")
+                                navigate("/student/login")
                             }
                         >
-                            Login
+                            Student Login
                         </button>
 
                     </div>

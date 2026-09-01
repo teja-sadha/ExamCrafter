@@ -9,7 +9,7 @@ function Navbar() {
 
     const handleLogout = () => {
         logout();
-        navigate("/login");
+        navigate(user?.role === "admin" ? "/admin/login" : "/student/login");
     };
 
     const isActive = (path) => {
@@ -94,14 +94,25 @@ function Navbar() {
                             </Link>
 
                             <Link
-                                to="/login"
+                                to="/student/login"
                                 className={
-                                    isActive("/login")
+                                    isActive("/student/login")
                                         ? "active"
                                         : ""
                                 }
                             >
-                                Login
+                                Student Login
+                            </Link>
+
+                            <Link
+                                to="/admin/login"
+                                className={
+                                    isActive("/admin/login")
+                                        ? "active"
+                                        : ""
+                                }
+                            >
+                                Admin Login
                             </Link>
 
                             <Link
@@ -211,6 +222,19 @@ function Navbar() {
                                 }
                             >
                                 Exams
+                            </Link>
+
+                            <Link
+                                to="/admin/create-admin"
+                                className={
+                                    isActive(
+                                        "/admin/create-admin"
+                                    )
+                                        ? "active"
+                                        : ""
+                                }
+                            >
+                                Create Admin
                             </Link>
 
                             <Link

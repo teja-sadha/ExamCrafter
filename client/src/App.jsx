@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
-import Login from "./pages/Login";
+import StudentLogin from "./pages/StudentLogin";
+import AdminLogin from "./pages/AdminLogin";
 import Register from "./pages/Register";
+import AdminRegister from "./pages/AdminRegister";
 
 // Student pages
 import StudentDashboard from "./pages/student/Dashboard";
@@ -15,6 +17,7 @@ import StudentResults from "./pages/student/Results";
 import CreateExam from "./pages/admin/CreateExam";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminExams from "./pages/admin/Exams";
+import CreateAdmin from "./pages/admin/CreateAdmin";
 import AddQuestions from "./pages/admin/AddQuestions";
 import AdminResults from "./pages/admin/Results";
 import AdminResultDetails from "./pages/admin/ResultDetails";
@@ -41,13 +44,23 @@ function App() {
                 />
 
                 <Route
-                    path="/login"
-                    element={<Login />}
+                    path="/student/login"
+                    element={<StudentLogin />}
+                />
+
+                <Route
+                    path="/admin/login"
+                    element={<AdminLogin />}
                 />
 
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                <Route
+                    path="/admin/register"
+                    element={<AdminRegister />}
                 />
 
                 {/* =========================
@@ -134,6 +147,15 @@ function App() {
                     element={
                         <ProtectedRoute role="admin">
                             <CreateExam />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/create-admin"
+                    element={
+                        <ProtectedRoute role="admin">
+                            <CreateAdmin />
                         </ProtectedRoute>
                     }
                 />

@@ -1,6 +1,8 @@
 const Result = require("../models/Result");
 const Exam = require("../models/Exam");
 const Question = require("../models/Question");
+const User = require("../models/User");
+const { isStudentAllowedForExam } = require("./examController");
 
 // ==========================================
 // STUDENT - SUBMIT EXAM
@@ -72,6 +74,25 @@ const submitExam = async (req, res) => {
             return res.status(403).json({
                 message:
                     "This exam has already ended"
+            });
+        }
+
+        let studentEmail = req.user.email;
+
+        if (!studentEmail) {
+            const user = await User.findById(req.user.userId).select("email");
+            studentEmail = user?.email;
+        }
+
+        if (
+            !isStudentAllowedForExam(
+                exam,
+                studentEmail
+            )
+        ) {
+            return res.status(403).json({
+                message:
+                    "You are not authorized to access this exam."
             });
         }
 
@@ -270,6 +291,25 @@ const getMyResult = async (req, res) => {
             return res.status(404).json({
                 message:
                     "Result not found"
+            });
+        }
+
+        let studentEmail = req.user.email;
+
+        if (!studentEmail) {
+            const user = await User.findById(req.user.userId).select("email");
+            studentEmail = user?.email;
+        }
+
+        if (
+            !isStudentAllowedForExam(
+                result.exam,
+                studentEmail
+            )
+        ) {
+            return res.status(403).json({
+                message:
+                    "You are not authorized to access this exam."
             });
         }
 

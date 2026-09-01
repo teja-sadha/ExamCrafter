@@ -8,7 +8,7 @@ const makeAdmin = async () => {
     try {
         await connectDB();
 
-        const email = "admin@codearena.com";
+        const email = "admin@codearen.com";
 
         const user = await User.findOne({ email });
 
